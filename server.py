@@ -59,15 +59,20 @@ class dcache_server:
             message_length = int(message.decode(config.FORMAT))
 
             message = client_socket.recv(message_length)
-            self.parse_message(message)
+            response = self.parse_message(message, addr)
+            self.send(response, addr)
 
-    def parse_message(self, message):
+    def register_client(self, addr):
+        client_id = len(self.clients) + 1
+        print("Adding a new client ", client_id, addr)
+        self.clients.append(client_id)
+        return client_id
+
+    def parse_message(self, message, addr):
         message = pickle.loads(message)
 
         if isinstance(message, str):
-            client_id = len(self.clients) + 1
-            print("Adding a new client ", client_id)
-            self.clients.append(client_id)
+            return self.register_client(addr)
 
         elif message.get("add", config.RANDOM_STRING) != config.RANDOM_STRING:
             print("add ", message["add"])
@@ -92,6 +97,14 @@ class dcache_server:
             addr, conn = self.server_socket.accept()
             thread = threading.Thread(target=self.handle_connection, args=(addr, conn))
             thread.start()
+
+    def send(self, message, addr):
+        print("Client Send message: {}".format(message))
+        message = pickle.dumps(message)
+        send_length = f"{len(message):<{config.HEADER_LENGTH}}"
+        # self.server_socket.connect(addr)
+        self.server_socket.sendto(bytes(send_length, config.FORMAT), addr)
+        self.server_socket.send(message)
 
 
 if __name__ == '__main__':

@@ -19,7 +19,7 @@ class dcache_client:
         self.client_socket.connect(config.ADDRESS)
 
     def register(self):
-        self.send("register")
+        self.id = self.send("register")
 
     def query(self, key):
         self.send({"query": key})
@@ -60,11 +60,24 @@ class dcache_client:
 
     def send(self, message):
         """ Central place to communicate with the server for all the needs of the client """
-        print("Send message: {}".format(message))
+        print("Client Send message: {}".format(message))
         message = pickle.dumps(message)
         send_length = f"{len(message):<{config.HEADER_LENGTH}}"
         self.client_socket.send(bytes(send_length, config.FORMAT))
         self.client_socket.send(message)
+
+        # Receive and decode response
+        while True:
+            message = self.client_socket.recv(config.HEADER_LENGTH)
+            if not message:
+                continue
+            message_length = int(message.decode(config.FORMAT))
+
+            message = self.client_socket.recv(message_length)
+            response = pickle.loads(message)
+            print("Server's response: ", response)
+            break
+        return response
 
     def parse_message(self, message):
         pass
