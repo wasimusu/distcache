@@ -58,6 +58,10 @@ class dcache_client:
         """
         pass
 
+    def parse_message(self):
+        # This should run in a separate thread
+        pass
+
     def send(self, message):
         """ Central place to communicate with the server for all the needs of the client """
         print("Client Send message: {}".format(message))
@@ -74,9 +78,11 @@ class dcache_client:
             message_length = int(message.decode(config.FORMAT))
 
             message = self.client_socket.recv(message_length)
+            
             response = pickle.loads(message)
             print("Server's response: ", response)
             break
+
         return response
 
     def parse_message(self, message):

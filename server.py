@@ -24,6 +24,7 @@ config = config.config()
     query, key
     store key, value
     remove key
+    update key, value
     
     The server is always listening to the client. 
     It needs to detect if the client is:
@@ -60,7 +61,7 @@ class dcache_server:
 
             message = client_socket.recv(message_length)
             response = self.parse_message(message, addr)
-            self.send(response, addr)
+            self.send(response, client_socket, addr)
 
     def register_client(self, addr):
         client_id = len(self.clients) + 1
@@ -75,15 +76,19 @@ class dcache_server:
             return self.register_client(addr)
 
         elif message.get("add", config.RANDOM_STRING) != config.RANDOM_STRING:
+            # Determine which client to request to store this key, value
             print("add ", message["add"])
 
         elif message.get("remove", config.RANDOM_STRING) != config.RANDOM_STRING:
+            # Determine which client might possibly have this key
             print("remove ", message["remove"])
 
         elif message.get("query", config.RANDOM_STRING) != config.RANDOM_STRING:
+            # Determine which client might possibly have this key
             print("query ", message["query"])
 
         elif message.get("update", config.RANDOM_STRING) != config.RANDOM_STRING:
+            # Determine which client might possibly have this key
             print("update ", message["update"])
 
         else:
@@ -98,13 +103,13 @@ class dcache_server:
             thread = threading.Thread(target=self.handle_connection, args=(addr, conn))
             thread.start()
 
-    def send(self, message, addr):
+    def send(self, message, client_socket, addr):
         print("Client Send message: {}".format(message))
         message = pickle.dumps(message)
         send_length = f"{len(message):<{config.HEADER_LENGTH}}"
         # self.server_socket.connect(addr)
-        self.server_socket.sendto(bytes(send_length, config.FORMAT), addr)
-        self.server_socket.send(message)
+        client_socket.send(bytes(send_length, config.FORMAT))
+        client_socket.send(message)
 
 
 if __name__ == '__main__':
