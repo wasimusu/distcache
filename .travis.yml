@@ -1,4 +1,7 @@
-os: linux
+os:
+  - linux
+  - windows
+
 dist: xenial
 language: python
 python:
