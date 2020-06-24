@@ -2,7 +2,6 @@ import configure as config
 import socket
 import threading
 import pickle
-import subprocess
 
 config = config.config()
 
@@ -37,9 +36,6 @@ config = config.config()
 """
 
 
-# The server has a few things to do with the client
-
-
 class dcache_server:
     def __init__(self, num_virtual_replicas=10):
         # Socket
@@ -54,15 +50,22 @@ class dcache_server:
         print("Starting server at {}:{}".format(*config.ADDRESS))
         self.server_socket.listen(config.LISTEN_CAPACITY)
 
-    def spwan(self):
-        client_id = len(self.clients)
-        res = subprocess.run('python client.py {} {} {}'.format(config.IP, config.PORT, client_id))
-        # TODO: I can just instantiate a client object here.
-        # But a client instantiation is a blocking command. Maybe use python asyncio
+    def spawn(self):
+        """
+        Listens for new connections. And add it as a cache server.
+        """
+        while True:
+            client_socket, client_address = self.server_socket.accept()
 
-        # Communicate further to establish the client_socket and client_address (ip we know, port we don't)
-        client_socket, client_address = self.server_socket.accept()
-        self.clients[client_id] = (client_socket, client_address)
+            client_id = len(self.clients)
+            self.clients[client_id] = (client_socket, client_address)
+
+            message = pickle.dumps(client_id)
+            send_length = f"{len(message):<{config.HEADER_LENGTH}}"
+            client_socket.send(bytes(send_length, config.FORMAT))
+            client_socket.send(message)
+            break
+
         print("Spawned a client at {}:{}".format(*client_address))
 
     def handle_connection(self, client_socket, client_address):
@@ -133,4 +136,5 @@ class dcache_server:
 
 if __name__ == '__main__':
     server = dcache_server(5)
-    server.start()
+    server.spawn()
+    server.spawn()

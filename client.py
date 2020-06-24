@@ -12,21 +12,39 @@ config = config.config()
 
 
 class dcache_client:
-    def __init__(self, server_ip, server_port, client_id, capacity=100):
+    def __init__(self, capacity=100):
         """
         :param capacity: capacity of the cache in MBs
         """
         self.cache = {}
         self.capacity = capacity
-        self.id = client_id  # Congrats! You're already registered with the server
-        self.server_address = (server_ip, int(server_port))
+        self.server_address = (config.IP, config.PORT)
         self.garbage_cache_response = "@!#$!@#"
 
         # Start the connection with the server. socket. connect
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        # TODO: Need to register the client so that server knows port also
+        self.id = self.register()  # Congrats! You're already registered with the server
+        print("About: ", self.client_socket.getsockname(), self.id)
+
+    def register(self):
+        """
+        Just try connecting to the server. And it will register you.
+        :return:
+        """
         self.client_socket.connect(self.server_address)
         print("Client connected at address {}:{}".format(*self.server_address))
-        # TODO: Need to register the client so that server knows port also
+        while True:
+            response = self.client_socket.recv(config.HEADER_LENGTH)
+            if not response:
+                continue
+            message_length = int(response.decode(config.FORMAT))
+            response = self.client_socket.recv(message_length)
+            client_id = pickle.loads(response)
+            break
+
+        return client_id
 
     def get(self, key):
         """
@@ -100,7 +118,7 @@ class dcache_client:
         else:
             print("Only these keywords are supported: get, set, delete")
 
-        return None
+        return message
 
     def send(self, message):
         """ Central place to communicate with the server for all the needs of the client """
@@ -127,7 +145,4 @@ class dcache_client:
 
 
 if __name__ == '__main__':
-    print(sys.argv)
-    server_ip, server_port, client_id = sys.argv[1:]
-    client = dcache_client(server_ip, server_port, client_id)
-    pass
+    client = dcache_client()
