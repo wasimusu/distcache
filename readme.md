@@ -12,7 +12,6 @@ Distributed cache implemented in pure python without any external dependency.
 - The API is similar to memcached
 
 # Platform
-* Windows
 * Linux
 
 #### Storage Commands
@@ -27,7 +26,6 @@ Distributed cache implemented in pure python without any external dependency.
 ### TODO
 - Add tests
 - Add benchmarks
-- Add Travis CI
 
 ### System Requirements
 Runs on both windows and linux platforms

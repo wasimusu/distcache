@@ -48,9 +48,7 @@ class dcache_client:
             message_length = int(response.decode(config.FORMAT))
             response = self.client_socket.recv(message_length)
             client_id = pickle.loads(response)
-            break
-
-        return client_id
+            return client_id
 
     def get(self, key):
         """
@@ -58,7 +56,7 @@ class dcache_client:
         For now, the value of keys can not be boolean
         :return: value of the key if it exists, otherwise False.
         """
-        value, _ = self.cache.get(key, self.garbage_cache_response)
+        value, _ = self.cache.get(key, (self.garbage_cache_response, -1))
         print("{} fetched from server {}".format(key, self.id))
 
         if value == self.garbage_cache_response:
@@ -161,7 +159,9 @@ class dcache_client:
         Implements LRU cache eviction on the cache
         :return: None
         """
-        print("We need to evict some items from cache")
+        if sys.getsizeof(self.cache) > self.capacity:
+            print("We need to evict some items from cache")
+
         while sys.getsizeof(self.cache) > self.capacity:
             while self.least_recent_time not in self.time_key:
                 self.least_recent_time += 1

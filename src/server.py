@@ -1,37 +1,12 @@
 from src import configure as config
+
 import socket
 import pickle
 
 config = config.config()
 
 """
-    When there is a new key, value. The client sends that key value to the server.
-    The server finds a client to store that key value. And sends the (key, value) pair to that server
-
-    Starting a new client.
-    Each client is assigned a unique ID upon start and is registered with the server.
-        
-    What are the functions of the client.
-    Every PC has a client running with a local cache.
-    Whenever there is a query, first the local cache is consulted then if the key is not found, the server is queried.
-    The server then determines the location of the cache and queries that location for the value of the key
-    
-    So there are three kinds of message, the client sends to the server. 
-    The message always is a dictionary, apart from the first message being the length of the message.
-    
-    register
-    get, key
-    set key, value
-    delete key
-    
-    The server is always listening to the client. 
-    It needs to detect if the client is:
-    - It is alive.
-    - It is not overwhelmed. It should not be overwhelmed. It should just clear some of the cache.
-    And get back to work.
-    
-    Whose job is it to determine that a client is not overwhelmed?    
-    How does a client reserve memory in python? Store until it reaches certain threshold.      
+The server is always listening to the client. It needs to detect if the client is alive.
 """
 
 
@@ -128,6 +103,7 @@ if __name__ == '__main__':
     server = dcache_server(5)
     server.spawn()
     # server.spawn()
+    # server.spawn()
 
     server.set("wasim", "akram")
     server.set("ram", "prasad")
@@ -140,3 +116,4 @@ if __name__ == '__main__':
     print(server.get("hey"))
     server.delete(3)
     print(server.get(3))
+    print(server.get("wasim"))
