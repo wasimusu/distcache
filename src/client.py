@@ -4,8 +4,9 @@ Still a cache server. This does not interact with the client.
 
 import pickle
 import socket
+import sys
+
 from src import configure as config
-import threading
 
 config = config.config()
 
@@ -15,10 +16,16 @@ class dcache_client:
         """
         :param capacity: capacity of the cache in MBs
         """
-        self.cache = {}
-        self.capacity = capacity
-        self.server_address = (config.IP, config.PORT)
+        # cache configuration
+        self.cache = {}  # (key, (value, time))
+        self.time_key = {}  # (time, key)
+        self.capacity = capacity * 1024
         self.garbage_cache_response = "@!#$!@#"
+        self.time = 0
+        self.least_recent_time = 0
+
+        # Server configuration
+        self.server_address = (config.IP, config.PORT)
 
         # Start the connection with the server. socket. connect
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -51,9 +58,14 @@ class dcache_client:
         For now, the value of keys can not be boolean
         :return: value of the key if it exists, otherwise False.
         """
-        response = self.cache.get(key, self.garbage_cache_response)
+        value, _ = self.cache.get(key, self.garbage_cache_response)
         print("{} fetched from server {}".format(key, self.id))
-        return response if response != self.garbage_cache_response else False
+
+        if value == self.garbage_cache_response:
+            return False
+
+        self.set(key, value)  # TODO: Asynchronously update the timestamp also
+        return value
 
     def set(self, key, value):
         """
@@ -62,15 +74,28 @@ class dcache_client:
         If the key is old, update it with new value and also the LRU
         :return: boolean indicating success of the operation
         """
-        self.cache[key] = value
+        if key in self.cache:
+            # TODO: I am moving whole objects instead of just changing timestamp. Not good!
+            _, time = self.cache[key]
+            del self.cache[key]
+            del self.time_key[time]
+
+        self.cache[key] = (value, self.time)
+        self.time_key[self.time] = key
+        self.time += 1
+
         print("{} stored in server {}".format(key, self.id))
+        self.lru_eviction()  # TODO: Asynchronously update the timer also
         return True
 
     def delete(self, key):
         """
         The server wants the key deleted.
         """
-        del self.cache[key]
+        if key in self.cache:
+            _, time = self.cache[key]
+            del self.cache[key]
+            del self.time_key[time]
         print("{} deleted from server {}".format(key, self.id))
         return True
 
@@ -130,6 +155,18 @@ class dcache_client:
         send_length = f"{len(message):<{config.HEADER_LENGTH}}"
         self.client_socket.send(bytes(send_length, config.FORMAT))
         self.client_socket.send(message)
+
+    def lru_eviction(self):
+        """
+        Implements LRU cache eviction on the cache
+        :return: None
+        """
+        print("We need to evict some items from cache")
+        while sys.getsizeof(self.cache) > self.capacity:
+            while self.least_recent_time not in self.time_key:
+                self.least_recent_time += 1
+            del self.cache[self.time_key[self.least_recent_time]]
+            del self.time_key[self.least_recent_time]
 
 
 if __name__ == '__main__':
