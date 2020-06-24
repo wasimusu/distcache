@@ -1,6 +1,5 @@
-import configure as config
+from src import configure as config
 import socket
-import threading
 import pickle
 
 config = config.config()

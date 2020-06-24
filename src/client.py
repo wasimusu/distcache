@@ -4,8 +4,7 @@ Still a cache server. This does not interact with the client.
 
 import pickle
 import socket
-import configure as config
-import sys
+from src import configure as config
 import threading
 
 config = config.config()
