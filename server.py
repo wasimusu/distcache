@@ -2,6 +2,7 @@ import configure as config
 import socket
 import threading
 import pickle
+import subprocess
 
 config = config.config()
 
@@ -21,15 +22,15 @@ config = config.config()
     The message always is a dictionary, apart from the first message being the length of the message.
     
     register
-    query, key
-    store key, value
-    remove key
-    update key, value
+    get, key
+    set key, value
+    delete key
     
     The server is always listening to the client. 
     It needs to detect if the client is:
     - It is alive.
-    - It is not overwhelmed.
+    - It is not overwhelmed. It should not be overwhelmed. It should just clear some of the cache.
+    And get back to work.
     
     Whose job is it to determine that a client is not overwhelmed?    
     How does a client reserve memory in python? Store until it reaches certain threshold.      
@@ -40,19 +41,31 @@ config = config.config()
 
 
 class dcache_server:
-    def __init__(self):
+    def __init__(self, num_virtual_replicas=10):
         # Socket
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # Bind
         self.server_socket.bind(config.ADDRESS)
-        self.clients = []
+        self.clients = {}
+        self.start()
 
     def start(self):
         # Listen
         print("Starting server at {}:{}".format(*config.ADDRESS))
         self.server_socket.listen(config.LISTEN_CAPACITY)
 
-    def handle_connection(self, client_socket, addr):
+    def spwan(self):
+        client_id = len(self.clients)
+        res = subprocess.run('python client.py {} {} {}'.format(config.IP, config.PORT, client_id))
+        # TODO: I can just instantiate a client object here.
+        # But a client instantiation is a blocking command. Maybe use python asyncio
+
+        # Communicate further to establish the client_socket and client_address (ip we know, port we don't)
+        client_socket, client_address = self.server_socket.accept()
+        self.clients[client_id] = (client_socket, client_address)
+        print("Spawned a client at {}:{}".format(*client_address))
+
+    def handle_connection(self, client_socket, client_address):
         while True:
             message = client_socket.recv(config.HEADER_LENGTH)
             if not message:
@@ -60,59 +73,64 @@ class dcache_server:
             message_length = int(message.decode(config.FORMAT))
 
             message = client_socket.recv(message_length)
-            response = self.parse_message(message, addr)
-            self.send(response, client_socket, addr)
+            response = self.parse_message(message, client_address)
+            self.send(response, client_socket, client_address)
 
-    def register_client(self, addr):
-        client_id = len(self.clients) + 1
-        print("Adding a new client ", client_id, addr)
-        self.clients.append(client_id)
-        return client_id
-
-    def parse_message(self, message, addr):
-        message = pickle.loads(message)
-
-        if isinstance(message, str):
-            return self.register_client(addr)
-
-        elif message.get("add", config.RANDOM_STRING) != config.RANDOM_STRING:
-            # Determine which client to request to store this key, value
-            print("add ", message["add"])
-
-        elif message.get("remove", config.RANDOM_STRING) != config.RANDOM_STRING:
-            # Determine which client might possibly have this key
-            print("remove ", message["remove"])
-
-        elif message.get("query", config.RANDOM_STRING) != config.RANDOM_STRING:
-            # Determine which client might possibly have this key
-            print("query ", message["query"])
-
-        elif message.get("update", config.RANDOM_STRING) != config.RANDOM_STRING:
-            # Determine which client might possibly have this key
-            print("update ", message["update"])
-
-        else:
-            print("Only these keywords are supported: register, add, remove, query, update")
-
-        return None
-
-    def monitor(self):
-        print("Listening to clients now...")
-        while True:
-            addr, conn = self.server_socket.accept()
-            thread = threading.Thread(target=self.handle_connection, args=(addr, conn))
-            thread.start()
-
-    def send(self, message, client_socket, addr):
+    def send(self, message, client_socket):
         print("Client Send message: {}".format(message))
         message = pickle.dumps(message)
         send_length = f"{len(message):<{config.HEADER_LENGTH}}"
-        # self.server_socket.connect(addr)
         client_socket.send(bytes(send_length, config.FORMAT))
         client_socket.send(message)
 
+        while True:
+            response = client_socket.recv(config.HEADER_LENGTH)
+            if not response:
+                continue
+            message_length = response.decode(config.FORMAT)
+            response = client_socket.recv(message_length)
+            response = response.decode(config.FORMAT)
+            break
+        return response
+
+    def set(self, key, value):
+        """
+        Set or update the value of key from the cache. Also updates the LRU cache for already existing key or (key, value)
+        :return: bool value indicating if the operation was successful or not.
+        """
+        # Get the address of the server containing the key
+        client_socket, client_address = self._get_server_for_key(key)
+        response = self.send(("set", (key, value)), client_socket, client_address)
+        return True if response else False
+
+    def get(self, key):
+        """
+        Get the value of key from the cache
+        :return: corresponding value for the key
+        """
+        # Get the address of the server containing the key
+        client_socket, client_address = self._get_server_for_key(key)
+        response = self.send(("get", key), client_socket, client_address)
+        return response
+
+    def delete(self, key):
+        """
+        Get the value of key from the cache
+        :return: corresponding value for the key
+        """
+        # Get the address of the server containing the key
+        client_socket, client_address = self._get_server_for_key(key)
+        response = self.send(("del", key), client_socket, client_address)
+        return response
+
+    def _get_server_for_key(self, key):
+        """
+        Should implement a consistent hashing function.
+        :return:
+        """
+        return hash(key) % len(self.clients)
+
 
 if __name__ == '__main__':
-    server = dcache_server()
+    server = dcache_server(5)
     server.start()
-    server.monitor()

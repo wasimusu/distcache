@@ -1,51 +1,62 @@
+"""
+Still a cache server. This does not interact with the client.
+"""
+
 import pickle
 import socket
 import configure as config
+import sys
+import threading
 
 config = config.config()
 
 
 class dcache_client:
-    def __init__(self, capacity=100):
+    def __init__(self, server_ip, server_port, client_id, capacity=100):
         """
         :param capacity: capacity of the cache in MBs
         """
-        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.cache = {}
         self.capacity = capacity
-        self.id = -1
+        self.id = client_id  # Congrats! You're already registered with the server
+        self.server_address = (server_ip, int(server_port))
+        self.garbage_cache_response = "@!#$!@#"
 
-    def connect(self):
-        self.client_socket.connect(config.ADDRESS)
+        # Start the connection with the server. socket. connect
+        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client_socket.connect(self.server_address)
+        print("Client connected at address {}:{}".format(*self.server_address))
+        # TODO: Need to register the client so that server knows port also
 
-    def register(self):
-        self.id = self.send("register")
-
-    def query(self, key):
-        self.send({"query": key})
-
-    def _local_add(self, key, value):
+    def get(self, key):
         """
-        Intended to be called by the client only. Not to be prompted by user.
+        Get the value corresponding to the key.
+        For now, the value of keys can not be boolean
+        :return: value of the key if it exists, otherwise False.
+        """
+        response = self.cache.get(key, self.garbage_cache_response)
+        return response if response != self.garbage_cache_response else False
+
+    def set(self, key, value):
+        """
         The server decided the key value be stored in this client.
-        :param key:
-        :param value:
-        :return:
+        If it is new, just add to the cache
+        If the key is old, update it with new value and also the LRU
+        :return: boolean indicating success of the operation
         """
         self.cache[key] = value
+        return True
 
-    def _local_remove(self, key):
+    def delete(self, key):
         """
         The server wants the key deleted.
         """
         del self.cache[key]
+        return True
 
-    def add(self, key, value):
-        """
-        If it is new, just add to the cache
-        If the key is old, update it with new value
-        """
-        self.send({"add": {key: value}})
+    def execute_query(self, message):
+        response = self.parse_message(message)
+        return self.send(response)
 
     def monitor(self):
         """
@@ -56,11 +67,40 @@ class dcache_client:
         The server can request you to delete key from cache
         :return:
         """
-        pass
+        print("Monitoring queries from server and responding...")
+        while True:
+            response = self.client_socket.recv(config.HEADER_LENGTH)
+            if not response:
+                continue
+            message_length = int(response.decode(config.FORMAT))
+            message = self.client_socket.recv(message_length)
+            thread = threading.Thread(target=self.execute_query, args=(message))
 
-    def parse_message(self):
+    def parse_message(self, message):
+        """
+        Parse and execute the command
+        :param message: the message sent by the dcache_server
+        :return: depends on the operation that was carried out after parsing message
+        """
         # This should run in a separate thread
-        pass
+        message = pickle.loads(message)
+
+        if message.get("set", config.RANDOM_STRING) != config.RANDOM_STRING:
+            print("set ", message[0:])
+            return self.set(message[1], message[2])
+
+        elif message.get("delete", config.RANDOM_STRING) != config.RANDOM_STRING:
+            print("delete ", message[0:])
+            return self.delete(message[1])
+
+        elif message.get("get", config.RANDOM_STRING) != config.RANDOM_STRING:
+            print("get ", message[0:])
+            return self.get(message[1])
+
+        else:
+            print("Only these keywords are supported: get, set, delete")
+
+        return None
 
     def send(self, message):
         """ Central place to communicate with the server for all the needs of the client """
@@ -78,21 +118,16 @@ class dcache_client:
             message_length = int(message.decode(config.FORMAT))
 
             message = self.client_socket.recv(message_length)
-            
+
             response = pickle.loads(message)
             print("Server's response: ", response)
             break
 
         return response
 
-    def parse_message(self, message):
-        pass
-
 
 if __name__ == '__main__':
-    d1 = dcache_client(100)
-    d1.connect()
-    d1.register()
-    d1.add(1, "apple")
-    d1.add(2, "orange")
-    d1.add(3, "pineapple")
+    print(sys.argv)
+    server_ip, server_port, client_id = sys.argv[1:]
+    client = dcache_client(server_ip, server_port, client_id)
+    pass
