@@ -52,6 +52,7 @@ class dcache_client:
         :return: value of the key if it exists, otherwise False.
         """
         response = self.cache.get(key, self.garbage_cache_response)
+        print("{} fetched from server {}".format(key, self.id))
         return response if response != self.garbage_cache_response else False
 
     def set(self, key, value):
@@ -62,6 +63,7 @@ class dcache_client:
         :return: boolean indicating success of the operation
         """
         self.cache[key] = value
+        print("{} stored in server {}".format(key, self.id))
         return True
 
     def delete(self, key):
@@ -69,11 +71,13 @@ class dcache_client:
         The server wants the key deleted.
         """
         del self.cache[key]
+        print("{} deleted from server {}".format(key, self.id))
         return True
 
     def execute_query(self, message):
         response = self.parse_message(message)
-        return self.send(response)
+        self.send(response)
+        return
 
     def monitor(self):
         """
@@ -91,7 +95,7 @@ class dcache_client:
                 continue
             message_length = int(response.decode(config.FORMAT))
             message = self.client_socket.recv(message_length)
-            thread = threading.Thread(target=self.execute_query, args=(message))
+            self.execute_query(message)
 
     def parse_message(self, message):
         """
@@ -102,16 +106,16 @@ class dcache_client:
         # This should run in a separate thread
         message = pickle.loads(message)
 
-        if message.get("set", config.RANDOM_STRING) != config.RANDOM_STRING:
-            print("set ", message[0:])
+        if message[0] == "set":
+            print("set ", message[1:])
             return self.set(message[1], message[2])
 
-        elif message.get("delete", config.RANDOM_STRING) != config.RANDOM_STRING:
-            print("delete ", message[0:])
+        elif message[0] == "del":
+            print("delete ", message[1:])
             return self.delete(message[1])
 
-        elif message.get("get", config.RANDOM_STRING) != config.RANDOM_STRING:
-            print("get ", message[0:])
+        elif message[0] == "get":
+            print("get ", message[1:])
             return self.get(message[1])
 
         else:
@@ -121,27 +125,13 @@ class dcache_client:
 
     def send(self, message):
         """ Central place to communicate with the server for all the needs of the client """
-        print("Client Send message: {}".format(message))
+        print("Message to server message: {}".format(message))
         message = pickle.dumps(message)
         send_length = f"{len(message):<{config.HEADER_LENGTH}}"
         self.client_socket.send(bytes(send_length, config.FORMAT))
         self.client_socket.send(message)
 
-        # Receive and decode response
-        while True:
-            message = self.client_socket.recv(config.HEADER_LENGTH)
-            if not message:
-                continue
-            message_length = int(message.decode(config.FORMAT))
-
-            message = self.client_socket.recv(message_length)
-
-            response = pickle.loads(message)
-            print("Server's response: ", response)
-            break
-
-        return response
-
 
 if __name__ == '__main__':
     client = dcache_client()
+    client.monitor()

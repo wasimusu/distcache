@@ -67,32 +67,23 @@ class dcache_server:
 
         print("Spawned a client at {}:{}".format(*client_address))
 
-    def handle_connection(self, client_socket, client_address):
-        while True:
-            message = client_socket.recv(config.HEADER_LENGTH)
-            if not message:
-                continue
-            message_length = int(message.decode(config.FORMAT))
-
-            message = client_socket.recv(message_length)
-            response = self.parse_message(message, client_address)
-            self.send(response, client_socket, client_address)
-
     def send(self, message, client_socket):
-        print("Client Send message: {}".format(message))
+        print("Sending client message: {}".format(message))
         message = pickle.dumps(message)
         send_length = f"{len(message):<{config.HEADER_LENGTH}}"
         client_socket.send(bytes(send_length, config.FORMAT))
         client_socket.send(message)
+        print("Sent!")
 
         while True:
             response = client_socket.recv(config.HEADER_LENGTH)
             if not response:
                 continue
-            message_length = response.decode(config.FORMAT)
+            message_length = int(response.decode(config.FORMAT))
             response = client_socket.recv(message_length)
-            response = response.decode(config.FORMAT)
+            response = pickle.loads(response)
             break
+        print("Response received: ", response)
         return response
 
     def set(self, key, value):
@@ -102,7 +93,7 @@ class dcache_server:
         """
         # Get the address of the server containing the key
         client_socket, client_address = self._get_server_for_key(key)
-        response = self.send(("set", (key, value)), client_socket, client_address)
+        response = self.send(("set", key, value), client_socket)
         return True if response else False
 
     def get(self, key):
@@ -112,7 +103,7 @@ class dcache_server:
         """
         # Get the address of the server containing the key
         client_socket, client_address = self._get_server_for_key(key)
-        response = self.send(("get", key), client_socket, client_address)
+        response = self.send(("get", key), client_socket)
         return response
 
     def delete(self, key):
@@ -122,7 +113,7 @@ class dcache_server:
         """
         # Get the address of the server containing the key
         client_socket, client_address = self._get_server_for_key(key)
-        response = self.send(("del", key), client_socket, client_address)
+        response = self.send(("del", key), client_socket)
         return response
 
     def _get_server_for_key(self, key):
@@ -130,10 +121,22 @@ class dcache_server:
         Should implement a consistent hashing function.
         :return:
         """
-        return hash(key) % len(self.clients)
+        return self.clients[hash(key) % len(self.clients)]
 
 
 if __name__ == '__main__':
     server = dcache_server(5)
     server.spawn()
-    server.spawn()
+    # server.spawn()
+
+    server.set("wasim", "akram")
+    server.set("ram", "prasad")
+    server.set(1, 2)
+    server.set(3, 6)
+    server.set("hey", "bhaga")
+    print(server.get("hey"))
+    print(server.get(1))
+    server.set("hey", "man")
+    print(server.get("hey"))
+    server.delete(3)
+    print(server.get(3))
