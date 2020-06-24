@@ -1,7 +1,7 @@
 ### dcache (Distributed Cache)
 
 #### Build and test status
-<img src="https://travis-ci.com/wasimusu/graphs.svg?branch=master" width="100">
+<img src="https://travis-ci.com/wasimusu/dcache.svg?branch=master" width="100">
 
 Distributed cache implemented in pure python without any external dependency.
 
