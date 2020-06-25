@@ -114,3 +114,8 @@ if __name__ == '__main__':
     ring = ConsistentHashing(servers, weights)
     server = ring.get_node('my_key')
     print(server)
+
+    ring.remove_node(server)
+
+    server = ring.get_node('my_key')
+    print(server)

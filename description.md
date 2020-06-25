@@ -10,9 +10,13 @@ This is project description and list of TODOs.
 - Implement get, set, delete
 - Handle timeout
 - Log important stats like hits and misses
+- Implement consistent hashing
+- Deal with unavailable servers like cache miss.
+When they come back online again, they will be treated as new servers.
 
 - ##### TODO for cache
 - Log reconstruction (persistent)
+- Implement health checks
 - Expiration time on keys. It just makes each record expensive to store.
 - Implement increment and decrement in redis like counter
 - Make sure it works for single server node
@@ -21,12 +25,7 @@ This is project description and list of TODOs.
     - Create 100,000 files of random images maybe (binary). Read and query these files.
     - Note: For benchmarks, we consider reading from database/file directly versus having querying in-memory key, value store.     
 - Add sample code
-- Implement consistent hashing
-- Implement health checks
-- Deal with unavailable servers like cache miss.
-When they come back online again, they will be treated as new servers.
 
 - ##### TODO for persistent storage
 - Write in batches to the disk. Make provision for flush as well. 
 - When key is not in the cache, check for it in the disk
-

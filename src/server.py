@@ -172,7 +172,7 @@ class dcache_server:
         The health check metrics found an unavailable server. It should be removed from the server space.
         :return: None
         """
-        pass
+        self.ring.remove_node(client_socket)
 
     def stats(self):
         """
