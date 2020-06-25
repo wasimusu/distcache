@@ -114,6 +114,7 @@ class dcache_server:
         """
         Decrement value corresponding to the key in a thread-safe manner.
         :return: boolean indicating if the operation was successful or not.
+        :rtype: bool
         """
         return self.add(key, -1)
 
@@ -122,6 +123,7 @@ class dcache_server:
         Add diff to the value corresponding to key in a thread safe manner.
         :param diff: the amount to be added to the value of key
         :return: boolean indicating if the operation was successful or not.
+        :rtype: bool
         """
         client_socket, client_address = self._get_server_for_key(key)
         response = self.send(("add", key, diff), client_socket)
