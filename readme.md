@@ -1,9 +1,12 @@
 ### dcache (Distributed Cache)
+dcache is a python open-source distributed in-memory cache and database.
+Operations are mostly asynchronous to achieve high performance.
+It is implemented purely in python without any external dependency.
+One of design goal of this project is ease of use and less congitive load to users of
+similar caching/database systems like Redis, Memcached.
 
 #### Build and test status
 <img src="https://travis-ci.com/wasimusu/dcache.svg?branch=master" width="100">
-
-Distributed cache implemented in pure python without any external dependency.
 
 ### Features
 - The cache could be on a single PC or multiple PCs scattered over the internet.
@@ -13,6 +16,7 @@ Distributed cache implemented in pure python without any external dependency.
 
 # Platform
 * Linux
+* Python 2.7 to Python 3.5
 
 #### Storage Commands
 - set (can be used to update as well, updates the LRU too)
@@ -27,11 +31,6 @@ Distributed cache implemented in pure python without any external dependency.
 - Add tests
 - Add benchmarks
 
-### System Requirements
-Runs on both windows and linux platforms
-Requires python3
-
-
 ### Install
 ```
 pip install -r requirements.txt
@@ -41,3 +40,4 @@ pip install -r requirements.txt
 
 
 ### Contributing
+Please read [contributing] (contributing.md) to learn how to contribute to this project.

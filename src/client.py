@@ -65,6 +65,20 @@ class dcache_client:
         self.set(key, value)  # TODO: Asynchronously update the timestamp also
         return value
 
+    def add(self, key, diff):
+        """
+        Add diff to the value corresponding to key in a thread safe manner.
+        :param diff: the amount to be added to the value of key
+        :return: boolean indicating if the operation was successful or not.
+        """
+        value, _ = self.cache.get(key, (self.garbage_cache_response, -1))
+
+        # TODO: Add diff to value in a thread-safe manner
+        value += diff
+
+        self.set(key, value)  # TODO: Asynchronously update the timestamp also
+        return value
+
     def set(self, key, value):
         """
         The server decided the key value be stored in this client.
@@ -113,12 +127,15 @@ class dcache_client:
         """
         print("Monitoring queries from server and responding...")
         while True:
-            response = self.client_socket.recv(config.HEADER_LENGTH)
-            if not response:
-                continue
-            message_length = int(response.decode(config.FORMAT))
-            message = self.client_socket.recv(message_length)
-            self.execute_query(message)
+            try:
+                response = self.client_socket.recv(config.HEADER_LENGTH)
+                if not response:
+                    continue
+                message_length = int(response.decode(config.FORMAT))
+                message = self.client_socket.recv(message_length)
+                self.execute_query(message)
+            except ConnectionResetError as err:
+                pass
 
     def parse_message(self, message):
         """
@@ -141,6 +158,10 @@ class dcache_client:
             print("get ", message[1:])
             return self.get(message[1])
 
+        elif message[0] == "add":
+            print("get ", message[1:])
+            return self.add(message[1], message[2])
+
         else:
             print("Only these keywords are supported: get, set, delete")
 
@@ -148,7 +169,7 @@ class dcache_client:
 
     def send(self, message):
         """ Central place to communicate with the server for all the needs of the client """
-        print("Message to server message: {}".format(message))
+        print("Message to server message: {}\n".format(message))
         message = pickle.dumps(message)
         send_length = f"{len(message):<{config.HEADER_LENGTH}}"
         self.client_socket.send(bytes(send_length, config.FORMAT))

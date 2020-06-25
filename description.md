@@ -8,10 +8,9 @@ This is project description and list of TODOs.
     * Start the server.
     * Ask the cache server to spwan. Then it will listen for new connections.
 
-- ##### TODO
+- ##### TODO for cache
 - Handle timeout
 - Implement increment and decrement in redis like counter
-- Understand the communication flow
 - Make sure it works for single server node
 - Add benchmarks for databases
 - Add sample code
@@ -19,6 +18,8 @@ This is project description and list of TODOs.
 - (Optional) Implement health checks
 - Deal with unavailable servers like cache miss.
 When they come back online again, they will be treated as new servers.
-- (Optional) Write the keyvalue to an underlying database i.e. a persistant storage. 
-This allows dcache to also act as a key, value store database.
+
+- ##### TODO for persistent storage
+- Write in batches to the disk 
+- When key is not in the cache, check for it in the disk
 
