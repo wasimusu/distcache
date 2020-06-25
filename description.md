@@ -9,10 +9,10 @@ This is project description and list of TODOs.
     * Ask the cache server to spwan. Then it will listen for new connections.
 - Implement get, set, delete
 - Handle timeout
+- Log important stats like hits and misses
 
 - ##### TODO for cache
 - Log reconstruction (persistent)
-- Log important stats like hits and misses
 - Expiration time on keys. It just makes each record expensive to store.
 - Implement increment and decrement in redis like counter
 - Make sure it works for single server node

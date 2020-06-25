@@ -44,4 +44,4 @@ Similarly you can store product_id, session_id, user_id, etc.
 Cache the results. And, the figures vary and you can still use caching service. It just makes things faster.
 
 ### Contributing
-Please read [contributing] (contributing.md) to learn how to contribute to this project.
+Please read [contributing](contributing.md) to learn how to contribute to this project.

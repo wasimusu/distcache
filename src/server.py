@@ -1,7 +1,9 @@
-from src import configure as config
-
 import socket
 import pickle
+import logging
+
+from src import configure as config
+from src.consistenthashing import ConsistentHashing
 
 config = config.config()
 
@@ -11,13 +13,34 @@ The server is always listening to the client. It needs to detect if the client i
 
 
 class dcache_server:
-    def __init__(self, num_virtual_replicas=10):
-        # Socket
+    def __init__(self, num_virtual_replicas=5, expire=0, log_filename='cache.csv', reconstruct=False):
+        """
+        :param[int] num_virtual_replicas: number of virtual replicas of each cache server
+        :param[int] expire: expiration time for keys in seconds.
+        """
+        self.num_virtual_replicas = num_virtual_replicas
+        self.expire = expire
+        self.ring = ConsistentHashing()
+
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # Bind
         self.server_socket.bind(config.ADDRESS)
         self.clients = {}
         self.start()
+
+        # Cache stats
+        self.cache_hits = 0
+        self.query_count = 0
+
+        logging.basicConfig(filename=log_filename, filemode='w', level=0)
+        logging.info(pickle.dumps((num_virtual_replicas, expire)))
+
+    def reconstruct_from_log(self):
+        """ Usage:
+            Start the server.
+            Spawn the clients.
+            Then ask the server to reconstruct from log file
+        """
+        pass
 
     def start(self):
         # Listen
@@ -38,6 +61,7 @@ class dcache_server:
             send_length = f"{len(message):<{config.HEADER_LENGTH}}"
             client_socket.send(bytes(send_length, config.FORMAT))
             client_socket.send(message)
+            self.ring.add_node(client_socket, self.num_virtual_replicas)
             break
 
         print("Spawned a client at {}:{}".format(*client_address))
@@ -73,6 +97,7 @@ class dcache_server:
         # Get the address of the server containing the key
         client_socket, client_address = self._get_server_for_key(key)
         response = self.send(("set", key, value), client_socket)
+        logging.info(("set", key, value))  # TODO: Gotta be async and batched
         return True if response else False
 
     def get(self, key):
@@ -83,6 +108,11 @@ class dcache_server:
         # Get the address of the server containing the key
         client_socket, client_address = self._get_server_for_key(key)
         response = self.send(("get", key), client_socket)
+        logging.info(("get", key))
+
+        self.query_count += 1
+        self.cache_hits += (response != False)
+
         return response
 
     def gets(self, keys):
@@ -101,6 +131,7 @@ class dcache_server:
         # Get the address of the server containing the key
         client_socket, client_address = self._get_server_for_key(key)
         response = self.send(("del", key), client_socket)
+        logging.info(("del", key))
         return response
 
     def increment(self, key):
@@ -127,14 +158,14 @@ class dcache_server:
         """
         client_socket, client_address = self._get_server_for_key(key)
         response = self.send(("add", key, diff), client_socket)
+        logging.info(("add", key, diff))
         return response
 
     def _get_server_for_key(self, key):
         """
-        TODO: Should implement a consistent hashing function.
-        :return:
+        :return: client_socket for the given key
         """
-        return self.clients[hash(key) % len(self.clients)]
+        return self.ring.get_node(key), None
 
     def _delist_unavailable_server(self, client_socket):
         """
@@ -142,6 +173,15 @@ class dcache_server:
         :return: None
         """
         pass
+
+    def stats(self):
+        """
+        Prints some of the important stats like hits, misses and total query counts
+        :return: None
+        """
+        print("Total queries: ".format(self.query_count))
+        print("Cache hits   : {}\t{.2f}".format(self.cache_hits, self.cache_hits / self.query_count))
+        print("Cache miss   : {}\t{.2f}".format(self.cache_hits, self.cache_hits / self.query_count))
 
 
 if __name__ == '__main__':
