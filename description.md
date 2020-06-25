@@ -9,6 +9,8 @@ This is project description and list of TODOs.
     * Ask the cache server to spwan. Then it will listen for new connections.
 
 - ##### TODO
+- Handle timeout
+- Implement increment and decrement in redis like counter
 - Understand the communication flow
 - Make sure it works for single server node
 - Add benchmarks for databases
