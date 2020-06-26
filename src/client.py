@@ -122,7 +122,7 @@ class CacheClient:
         :return:
         """
         print("Monitoring queries from server and responding...")
-        self.client_socket.settimeout(20)
+        self.client_socket.settimeout(30)  # TODO: Increasing timeout is not the solution.
         while True:
             response = self.client_socket.recv(config.HEADER_LENGTH)
             if not response:

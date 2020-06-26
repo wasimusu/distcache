@@ -1,11 +1,10 @@
 import socket
-import pickle
-import logging
 import threading
 
 from src import configure as config
 from src.consistenthashing import ConsistentHashing
 from src import utils
+from src import logger
 
 config = config.config()
 
@@ -15,7 +14,7 @@ The server is always listening to the client. It needs to detect if the client i
 
 
 class CacheServer:
-    def __init__(self, num_virtual_replicas=5, expire=0, log_filename='cache.csv', reconstruct=False):
+    def __init__(self, num_virtual_replicas=5, expire=0, reconstruct=False):
         """
         :param[int] num_virtual_replicas: number of virtual replicas of each cache server
         :param[int] expire: expiration time for keys in seconds.
@@ -49,17 +48,10 @@ class CacheServer:
         self.FORMAT = config.FORMAT
         self.LISTEN_CAPACITY = config.LISTEN_CAPACITY
 
-        logging.basicConfig(filename=log_filename, filemode='w', level=0)
-        logging.info(pickle.dumps((num_virtual_replicas, expire)))
-
-    def reconstruct_from_log(self):
-        """
-        Usage:
-            Start the server.
-            Spawn the clients.
-            Then ask the server to reconstruct from log file
-        """
-        pass
+        # Logging
+        # TODO: If there is already a cache.json file, run reconstruction
+        filename = 'cache.json'
+        self.logger = logger.Logger(filename=filename, mode='a', batch_size=1)
 
     def spawn(self):
         """
@@ -108,9 +100,8 @@ class CacheServer:
         """
         # Get the address of the server containing the key
         client_socket, client_address = self._get_server_for_key(key)
-        print(client_socket, client_address)
         response = self.send_receive(("set", key, value), client_socket)
-        logging.info(("set", key, value))  # TODO: Gotta be async and batched
+        self.logger.log(("set", key, value))
         return True if response else False
 
     def get(self, key):
@@ -121,7 +112,7 @@ class CacheServer:
         # Get the address of the server containing the key
         client_socket, client_address = self._get_server_for_key(key)
         response = self.send_receive(("get", key), client_socket)
-        logging.info(("get", key))
+        self.logger.log(("get", key))
 
         self.query_count += 1
         self.cache_hits += (response != False)
@@ -144,7 +135,7 @@ class CacheServer:
         # Get the address of the server containing the key
         client_socket, client_address = self._get_server_for_key(key)
         response = self.send_receive(("del", key), client_socket)
-        logging.info(("del", key))
+        self.logger.log(("del", key))
         return response
 
     def increment(self, key):
@@ -171,7 +162,7 @@ class CacheServer:
         """
         client_socket, client_address = self._get_server_for_key(key)
         response = self.send_receive(("add", key, diff), client_socket)
-        logging.info(("add", key, diff))
+        self.logger.log(("add", key, diff))
         return response
 
     def _get_server_for_key(self, key):
@@ -195,6 +186,29 @@ class CacheServer:
         print("Total queries: ".format(self.query_count))
         print("Cache hits   : {}\t{.2f}".format(self.cache_hits, self.cache_hits / self.query_count))
         print("Cache miss   : {}\t{.2f}".format(self.cache_hits, self.cache_hits / self.query_count))
+
+    def reconstruct_from_log(self):
+        """
+        Usage:
+            Start the server.
+            Spawn the clients.
+            Then ask the server to reconstruct from log file
+        """
+        pass
+
+    def close(self):
+        """
+        Close the cache server. Close all of its clients.
+        :return:
+        """
+        # Send (close) to every cache client.
+        # Ask the health server to shutdown.
+
+        self.logger.close()  # Flushes the objects in logging queues as well
+
+        # Just an interesting thought. If the server shuts down, eventually everyone shuts down.
+        self.health_server_socket.close()
+        self.server_socket.close()
 
 
 if __name__ == '__main__':
