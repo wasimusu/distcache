@@ -1,29 +1,29 @@
-### dcache (Distributed Cache)
-dcache is a python open-source distributed in-memory cache and database.
+### Cached (Distributed Cache)
+cached is a python open-source distributed in-memory cache and database.
 Operations are mostly asynchronous to achieve high performance.
 It is implemented purely in python without any external dependency.
-One of design goal of this project is ease of use and less congitive load to users of
+One of design goal of this project is ease of use and less cognitive load to users of
 similar caching/database systems like Redis, Memcached.
 
 #### Build and test status
 <img src="https://travis-ci.com/wasimusu/dcache.svg?branch=master" width="100">
 
 ### Features
-- The cache could be on a single PC or multiple PCs scattered over the internet.
-- Hardware failure is accounted for
+- Single server or distributed server cache
+- The cache server keeps track of health of cache clients using HealthServer. 
 - Cache is available unless all PCs fail
+- Logging of key cache operations 
+- Log replay or log reconstruction to rebuild cache from log
 - The API is similar to memcached
+HealthServer regular pings clients to ask if they are alive.
 
 # Platform
 * Linux
 * Python 2.7 to Python 3.5
 
-#### Storage Commands
+#### Cached Commands/functions
 - set (can be used to update as well, updates the LRU too)
-- add
 - delete
-
-#### Retrieval Commands
 - get
 - gets
 

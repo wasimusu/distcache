@@ -134,7 +134,7 @@ class CacheClient:
     def parse_message(self, message):
         """
         Parse and execute the command
-        :param message: the message sent by the dcache_server
+        :param message: the message sent by the cache_server
         :return: depends on the operation that was carried out after parsing message
         """
         # This should run in a separate thread
