@@ -1,4 +1,4 @@
-from src.server import CacheServer
+from src.cache_server import CacheServer
 import time
 import random
 

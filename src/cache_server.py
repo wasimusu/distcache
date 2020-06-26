@@ -1,5 +1,7 @@
 import socket
 import threading
+import json
+import os
 
 from src import configure as config
 from src.consistenthashing import ConsistentHashing
@@ -50,8 +52,8 @@ class CacheServer:
 
         # Logging
         # TODO: If there is already a cache.json file, run reconstruction
-        filename = 'cache.json'
-        self.logger = logger.Logger(filename=filename, mode='a', batch_size=1)
+        self.filename = 'cache.json'
+        self.logger = logger.Logger(filename=self.filename, mode='a', batch_size=1)
 
     def spawn(self):
         """
@@ -194,7 +196,30 @@ class CacheServer:
             Spawn the clients.
             Then ask the server to reconstruct from log file
         """
-        pass
+        # Can't reconstruct if there is no file
+        if not os.path.exists(self.filename):
+            return
+
+        with open(self.filename, mode='r') as file:
+            for line in file.readlines():
+                object = json.loads(line)
+                print("Object : ", object)
+
+                # Now you need to parse
+                if object[0] == "set":
+                    self.set(object[1], object[2])
+
+                elif object[0] == "get":
+                    self.get(object[1])
+
+                elif object[0] == "del":
+                    self.delete(object[1])
+
+                elif object[0] == "gets":
+                    self.gets(object[1:])
+
+                else:
+                    pass
 
     def close(self):
         """

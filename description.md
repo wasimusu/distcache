@@ -13,11 +13,15 @@ This is project description and list of TODOs.
 - Implement consistent hashing
 - Deal with unavailable servers like cache miss.
 When they come back online again, they will be treated as new servers.
+- Implement health checks
+- (De)Serialization of key cache operations so that it can be reconstructed in the event of crash
 
 - ##### TODO for cache
+- Spawning cache clients should easier and less error prone.
+- Restructure the project so that files can be imported properly.
+- Add setup.py and other information for pypi.
 - CacheServer starts HealthServers. CacheClients start HealthClients. 
 - Log reconstruction (persistent)
-- Implement health checks
 - Expiration time on keys. It just makes each record expensive to store.
 - Implement increment and decrement in redis like counter
 - Make sure it works for single server node
