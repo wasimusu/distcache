@@ -1,14 +1,14 @@
 import socket
 import threading
 import time
-import pickle
 
 from src import configure as config
+from src import utils
 
 config = config.config()
 
 
-class Server:
+class HealthServer:
     def __init__(self):
         # Client details
         self.clients = []
@@ -35,7 +35,7 @@ class Server:
         self.client_address = (config.IP, config.PORT)
         # self.client_socket.connect(self.client_address)
 
-    def monitor_client(self, client_socket, client_address):
+    def probe_health(self, client_socket, client_address):
         """
         Send heart beat every k second.
         If three heart beat requests are not acknowledged, the client is dead.
@@ -72,47 +72,6 @@ class Server:
         self.clients.remove(client_address)
         self.unhealthy_clients.append(client_address)
 
-    def summary(self):
-        """
-        Keep logging the number of healthy clients in a fixed time interval
-        :return: None
-        """
-        while True:
-            time.sleep(5)
-            print("Active healthy clients: {}".format(len(self.clients)))
-
-    def get_healthy_clients(self):
-        """
-        Return the list of healthy clients
-        :return: [int] returns the number of healthy clients
-        """
-        return self.unhealthy_clients
-
-    def send(self, message, client_socket):
-        print("Sending health report: {}".format(message))
-        message = pickle.dumps(message)
-        send_length = f"{len(message):<{config.HEADER_LENGTH}}"
-        client_socket.send(bytes(send_length, config.FORMAT))
-        client_socket.send(message)
-
-        client_socket.settimeout(5)
-        response = False  # In case of no response from cache servers, the response will be False (failed)
-        while True:
-            try:
-                response = client_socket.recv(config.HEADER_LENGTH)
-                if not response:
-                    continue
-                message_length = int(response.decode(config.FORMAT))
-                response = client_socket.recv(message_length)
-                response = pickle.loads(response)
-            finally:
-                break
-
-        print("Response received: {}\n".format(response))
-        if response:
-            self.unhealthy_clients = []
-        return response
-
     def monitor(self):
         """
         Monitor the health of the clients.
@@ -123,10 +82,34 @@ class Server:
         # threading.Thread(target=self.send, args=([], self.client_socket, self.client_address)).start()
         while True:
             client_socket, client_address = self.server_socket.accept()
-            thread = threading.Thread(target=self.monitor_client, args=(client_socket, client_address))
+            thread = threading.Thread(target=self.probe_health, args=(client_socket, client_address))
             thread.start()
+
+    def report_health(self, message, client_socket):
+        """
+        Report the cache clients health to the server
+        :param message: any message. in this case list of unavailable servers
+        :param client_socket: socket connected to the server
+        :return: None
+        """
+        # The response is false if the server does is unable to send any ACK
+        response = utils.send_receive_ack(message, client_socket, config.HEADER_LENGTH, config.FORMAT)
+
+        print("Response received: {}\n".format(response))
+        if response:
+            self.unhealthy_clients = []
+        return response
+
+    def summary(self):
+        """
+        Keep logging the number of healthy clients in a fixed time interval
+        :return: None
+        """
+        while True:
+            time.sleep(5)
+            print("Active healthy clients: {}".format(len(self.clients)))
 
 
 if __name__ == '__main__':
-    server = Server()
+    server = HealthServer()
     server.monitor()

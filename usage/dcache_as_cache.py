@@ -1,6 +1,6 @@
-from src.server import dcache_server
+from src.server import CacheServer
 
-server = dcache_server(5)
+server = CacheServer(5)
 server.spawn()
 # server.spawn()
 # server.spawn()

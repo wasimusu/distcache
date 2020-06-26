@@ -7,11 +7,12 @@ import socket
 import sys
 
 from src import configure as config
+from src import utils
 
 config = config.config()
 
 
-class dcache_client:
+class CacheClient:
     def __init__(self, capacity=100):
         """
         :param capacity: capacity of the cache in MBs
@@ -24,14 +25,14 @@ class dcache_client:
         self.time = 0
         self.least_recent_time = 0
 
-        # Server configuration
-        self.server_address = (config.IP, config.PORT)
+        # Communication configurations
+        self.FORMAT = config.FORMAT
+        self.HEADER_LENGTH = config.HEADER_LENGTH
 
         # Start the connection with the server. socket. connect
+        self.server_address = (config.IP, config.PORT)
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-        # TODO: Need to register the client so that server knows port also
-        self.id = self.register()  # Congrats! You're already registered with the server
+        self.id = self.register()  # Congrats! You're registered with the server. Server now knows you IP, PORT
         print("About: ", self.client_socket.getsockname(), self.id)
 
     def register(self):
@@ -41,14 +42,9 @@ class dcache_client:
         """
         self.client_socket.connect(self.server_address)
         print("Client connected at address {}:{}".format(*self.server_address))
-        while True:
-            response = self.client_socket.recv(config.HEADER_LENGTH)
-            if not response:
-                continue
-            message_length = int(response.decode(config.FORMAT))
-            response = self.client_socket.recv(message_length)
-            client_id = pickle.loads(response)
-            return client_id
+
+        # TODO: Make sure a proper client_id is always received.
+        return utils.receive_message(self.client_socket, self.HEADER_LENGTH, self.FORMAT)
 
     def get(self, key):
         """
@@ -113,7 +109,7 @@ class dcache_client:
 
     def execute_query(self, message):
         response = self.parse_message(message)
-        self.send(response)
+        utils.send_message(response, self.client_socket, self.HEADER_LENGTH, self.FORMAT)
         return
 
     def monitor(self):
@@ -135,7 +131,7 @@ class dcache_client:
                 message = self.client_socket.recv(message_length)
                 self.execute_query(message)
             except ConnectionResetError as err:
-                pass
+                print(err)
 
     def parse_message(self, message):
         """
@@ -167,14 +163,6 @@ class dcache_client:
 
         return message
 
-    def send(self, message):
-        """ Central place to communicate with the server for all the needs of the client """
-        print("Message to server message: {}\n".format(message))
-        message = pickle.dumps(message)
-        send_length = f"{len(message):<{config.HEADER_LENGTH}}"
-        self.client_socket.send(bytes(send_length, config.FORMAT))
-        self.client_socket.send(message)
-
     def lru_eviction(self):
         """
         Implements LRU cache eviction on the cache
@@ -191,5 +179,5 @@ class dcache_client:
 
 
 if __name__ == '__main__':
-    client = dcache_client()
+    client = CacheClient()
     client.monitor()

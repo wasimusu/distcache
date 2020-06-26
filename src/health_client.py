@@ -4,7 +4,7 @@ from src import configure as config
 config = config.config()
 
 
-class Client:
+class HealthClient:
     def __init__(self):
         # ACK Message details
         self.ACK_HEADER = 3
@@ -16,6 +16,11 @@ class Client:
         self.client_socket.connect(self.server_address)
 
     def relay_health(self):
+        """
+        If it receives any health probe from the server it replies with an ACK_MESSAGE to acknowledge that it is alive
+        and well.
+        :return: None
+        """
         print("Responding to health query from the server...")
         while True:
             response = self.client_socket.recv(3)
@@ -25,5 +30,5 @@ class Client:
 
 
 if __name__ == '__main__':
-    client = Client()
+    client = HealthClient()
     client.relay_health()

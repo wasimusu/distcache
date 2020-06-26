@@ -20,6 +20,7 @@ When they come back online again, they will be treated as new servers.
 - Expiration time on keys. It just makes each record expensive to store.
 - Implement increment and decrement in redis like counter
 - Make sure it works for single server node
+- Make some calls aysnc after testing code on single thread
 - Add benchmarks for databases
     - Create 100,000 files of products. Read and query these files.
     - Create 100,000 files of random images maybe (binary). Read and query these files.

@@ -4,6 +4,7 @@ import logging
 
 from src import configure as config
 from src.consistenthashing import ConsistentHashing
+from src import utils
 
 config = config.config()
 
@@ -12,7 +13,7 @@ The server is always listening to the client. It needs to detect if the client i
 """
 
 
-class dcache_server:
+class CacheServer:
     def __init__(self, num_virtual_replicas=5, expire=0, log_filename='cache.csv', reconstruct=False):
         """
         :param[int] num_virtual_replicas: number of virtual replicas of each cache server
@@ -22,14 +23,20 @@ class dcache_server:
         self.expire = expire
         self.ring = ConsistentHashing()
 
+        self.ADDRESS = config.ADDRESS
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server_socket.bind(config.ADDRESS)
+        self.server_socket.bind(self.ADDRESS)
         self.clients = {}
         self.start()
 
         # Cache stats
         self.cache_hits = 0
         self.query_count = 0
+
+        # Communication configuration
+        self.HEADER_LENGTH = config.HEADER_LENGTH
+        self.FORMAT = config.FORMAT
+        self.LISTEN_CAPACITY = config.LISTEN_CAPACITY
 
         logging.basicConfig(filename=log_filename, filemode='w', level=0)
         logging.info(pickle.dumps((num_virtual_replicas, expire)))
@@ -44,7 +51,7 @@ class dcache_server:
 
     def start(self):
         # Listen
-        print("Starting server at {}:{}".format(*config.ADDRESS))
+        print("Starting server at {}:{}".format(*self.ADDRESS))
         self.server_socket.listen(config.LISTEN_CAPACITY)
 
     def spawn(self):
@@ -57,35 +64,15 @@ class dcache_server:
             client_id = len(self.clients)
             self.clients[client_id] = (client_socket, client_address)
 
-            message = pickle.dumps(client_id)
-            send_length = f"{len(message):<{config.HEADER_LENGTH}}"
-            client_socket.send(bytes(send_length, config.FORMAT))
-            client_socket.send(message)
+            utils.send_message(client_id, client_socket, self.HEADER_LENGTH, self.FORMAT)
             self.ring.add_node(client_socket, self.num_virtual_replicas)
             break
 
         print("Spawned a client at {}:{}".format(*client_address))
 
-    def send(self, message, client_socket):
+    def send_receive(self, message, client_socket):
         print("Sending client message: {}".format(message))
-        message = pickle.dumps(message)
-        send_length = f"{len(message):<{config.HEADER_LENGTH}}"
-        client_socket.send(bytes(send_length, config.FORMAT))
-        client_socket.send(message)
-
-        client_socket.settimeout(5)
-        response = False  # In case of no response from cache servers, the response will be False (failed)
-        while True:
-            try:
-                response = client_socket.recv(config.HEADER_LENGTH)
-                if not response:
-                    continue
-                message_length = int(response.decode(config.FORMAT))
-                response = client_socket.recv(message_length)
-                response = pickle.loads(response)
-            finally:
-                break
-
+        response = utils.send_receive_ack(message, client_socket, self.HEADER_LENGTH, self.FORMAT)
         print("Response received: {}\n".format(response))
         return response
 
@@ -96,7 +83,7 @@ class dcache_server:
         """
         # Get the address of the server containing the key
         client_socket, client_address = self._get_server_for_key(key)
-        response = self.send(("set", key, value), client_socket)
+        response = self.send_receive(("set", key, value), client_socket)
         logging.info(("set", key, value))  # TODO: Gotta be async and batched
         return True if response else False
 
@@ -107,7 +94,7 @@ class dcache_server:
         """
         # Get the address of the server containing the key
         client_socket, client_address = self._get_server_for_key(key)
-        response = self.send(("get", key), client_socket)
+        response = self.send_receive(("get", key), client_socket)
         logging.info(("get", key))
 
         self.query_count += 1
@@ -130,7 +117,7 @@ class dcache_server:
         """
         # Get the address of the server containing the key
         client_socket, client_address = self._get_server_for_key(key)
-        response = self.send(("del", key), client_socket)
+        response = self.send_receive(("del", key), client_socket)
         logging.info(("del", key))
         return response
 
@@ -157,7 +144,7 @@ class dcache_server:
         :rtype: bool
         """
         client_socket, client_address = self._get_server_for_key(key)
-        response = self.send(("add", key, diff), client_socket)
+        response = self.send_receive(("add", key, diff), client_socket)
         logging.info(("add", key, diff))
         return response
 
