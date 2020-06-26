@@ -1,16 +1,18 @@
 import socket
+from src import configure as config
+
+config = config.config()
+
 
 class Client:
     def __init__(self):
-        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server_address = (socket.gethostbyname(socket.gethostname()), 5050)
-
         # ACK Message details
         self.ACK_HEADER = 3
         self.ACK_FORMAT = 'utf-8'
         self.ACK_MESSAGE = 'ACK'.encode(self.ACK_FORMAT)
 
-    def start(self):
+        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_address = (config.IP, config.HEALTH_PORT)
         self.client_socket.connect(self.server_address)
 
     def relay_health(self):
@@ -24,5 +26,4 @@ class Client:
 
 if __name__ == '__main__':
     client = Client()
-    client.start()
     client.relay_health()

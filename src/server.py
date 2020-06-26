@@ -73,7 +73,7 @@ class dcache_server:
         client_socket.send(bytes(send_length, config.FORMAT))
         client_socket.send(message)
 
-        client_socket.settimeout(0.5)
+        client_socket.settimeout(5)
         response = False  # In case of no response from cache servers, the response will be False (failed)
         while True:
             try:

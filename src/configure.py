@@ -10,3 +10,8 @@ class config:
         self.ADDRESS = (self.IP, self.PORT)
         self.LISTEN_CAPACITY = 100
         self.RANDOM_STRING = "!@#@#$!@#!@"
+
+        # Health probe configuration
+        self.HEALTH_PORT = 4080
+        self.PROBE_EVERY_K_SECOND = 5
+        self.HEARTBEAT_THRESH = 5  # k consecutive missing heartbeat means the server is dead
