@@ -25,15 +25,16 @@ class HealthServer:
 
         # Configure and start the health monitoring server
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server_address = (config.IP, config.HEALTH_PORT)
+        self.server_address = (config.IP, config.HEALTH_PROBE_PORT)
         self.server_socket.bind(self.server_address)
         print("Starting the server. Listening at {}:{}".format(*self.server_address))
         self.server_socket.listen()
 
         # Configure and start the health reporting client
-        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.client_address = (config.IP, config.PORT)
-        # self.client_socket.connect(self.client_address)
+        self.reporting_address = (config.IP, config.HEALTH_REPORT_PORT)
+        self.reporting_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        print("Trying to connect to {}:{}".format(*self.reporting_address))
+        self.reporting_socket.connect(self.reporting_address)
 
     def probe_health(self, client_socket, client_address):
         """
@@ -79,7 +80,7 @@ class HealthServer:
         """
         print("Monitoring the clients...")
         threading.Thread(target=self.summary).start()
-        # threading.Thread(target=self.send, args=([], self.client_socket, self.client_address)).start()
+        threading.Thread(target=self.report_health, args=([], self.reporting_socket)).start()
         while True:
             client_socket, client_address = self.server_socket.accept()
             thread = threading.Thread(target=self.probe_health, args=(client_socket, client_address))
@@ -92,13 +93,15 @@ class HealthServer:
         :param client_socket: socket connected to the server
         :return: None
         """
-        # The response is false if the server does is unable to send any ACK
-        response = utils.send_receive_ack(message, client_socket, config.HEADER_LENGTH, config.FORMAT)
+        while True:
+            time.sleep(5)  # Report health regularly.
 
-        print("Response received: {}\n".format(response))
-        if response:
-            self.unhealthy_clients = []
-        return response
+            # The response is false if the server does is unable to send any ACK
+            response = utils.send_receive_ack(message, client_socket, config.HEADER_LENGTH, config.FORMAT)
+
+            print("Report received by server: {}\n".format(response))
+            if response:
+                self.unhealthy_clients = []
 
     def summary(self):
         """

@@ -15,6 +15,7 @@ This is project description and list of TODOs.
 When they come back online again, they will be treated as new servers.
 
 - ##### TODO for cache
+- CacheServer starts HealthServers. CacheClients start HealthClients. 
 - Log reconstruction (persistent)
 - Implement health checks
 - Expiration time on keys. It just makes each record expensive to store.

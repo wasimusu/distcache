@@ -12,7 +12,7 @@ class HealthClient:
         self.ACK_MESSAGE = 'ACK'.encode(self.ACK_FORMAT)
 
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server_address = (config.IP, config.HEALTH_PORT)
+        self.server_address = (config.IP, config.HEALTH_PROBE_PORT)
         self.client_socket.connect(self.server_address)
 
     def relay_health(self):

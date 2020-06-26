@@ -1,6 +1,7 @@
 import socket
 import pickle
 import logging
+import threading
 
 from src import configure as config
 from src.consistenthashing import ConsistentHashing
@@ -22,12 +23,22 @@ class CacheServer:
         self.num_virtual_replicas = num_virtual_replicas
         self.expire = expire
         self.ring = ConsistentHashing()
+        self.cache_server_count = 0
 
+        # Cache server configuration
         self.ADDRESS = config.ADDRESS
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.bind(self.ADDRESS)
-        self.clients = {}
-        self.start()
+        self.clients = {}  # (ip, (id, socket, ip:port)
+        print("Starting server at {}:{}".format(*self.ADDRESS))
+        self.server_socket.listen(config.LISTEN_CAPACITY)
+
+        # Health monitor server configuration
+        self.health_server_address = (config.IP, config.HEALTH_REPORT_PORT)
+        self.health_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.health_server_socket.bind(self.health_server_address)
+        self.health_server_socket.listen()  # Only one health server is reporting health status
+        threading.Thread(target=self.monitor_health).start()
 
         # Cache stats
         self.cache_hits = 0
@@ -42,17 +53,13 @@ class CacheServer:
         logging.info(pickle.dumps((num_virtual_replicas, expire)))
 
     def reconstruct_from_log(self):
-        """ Usage:
+        """
+        Usage:
             Start the server.
             Spawn the clients.
             Then ask the server to reconstruct from log file
         """
         pass
-
-    def start(self):
-        # Listen
-        print("Starting server at {}:{}".format(*self.ADDRESS))
-        self.server_socket.listen(config.LISTEN_CAPACITY)
 
     def spawn(self):
         """
@@ -60,15 +67,33 @@ class CacheServer:
         """
         while True:
             client_socket, client_address = self.server_socket.accept()
+            utils.send_message(self.cache_server_count, client_socket, self.HEADER_LENGTH, self.FORMAT)
 
-            client_id = len(self.clients)
-            self.clients[client_id] = (client_socket, client_address)
-
-            utils.send_message(client_id, client_socket, self.HEADER_LENGTH, self.FORMAT)
-            self.ring.add_node(client_socket, self.num_virtual_replicas)
+            self.clients[client_address[0]] = (self.cache_server_count, client_socket, client_address)
+            self.ring.add_node(client_address[0], self.num_virtual_replicas)  # Consistent hashing on IP Address alone
             break
 
+        self.cache_server_count += 1
         print("Spawned a client at {}:{}".format(*client_address))
+
+    def monitor_health(self):
+        """
+        Continuously listens to health monitoring server.
+        Health monitoring server sends list of unavailable servers if any.
+        :return: None
+        """
+        client_socket, health_client_address = self.health_server_socket.accept()
+        print("Connected to health monitoring server at {}:{}".format(*health_client_address))
+        while True:
+            try:
+                unavailable_servers = utils.receive_message(client_socket, self.HEADER_LENGTH, self.FORMAT)
+                response = True if unavailable_servers else False
+                if response:
+                    for server in unavailable_servers:
+                        self._delist_unavailable_server(server)
+                utils.send_message(response, client_socket, self.HEADER_LENGTH, self.FORMAT)
+            except:
+                pass  # We will continue to monitor the health of servers until we die
 
     def send_receive(self, message, client_socket):
         print("Sending client message: {}".format(message))
@@ -83,6 +108,7 @@ class CacheServer:
         """
         # Get the address of the server containing the key
         client_socket, client_address = self._get_server_for_key(key)
+        print(client_socket, client_address)
         response = self.send_receive(("set", key, value), client_socket)
         logging.info(("set", key, value))  # TODO: Gotta be async and batched
         return True if response else False
@@ -152,14 +178,14 @@ class CacheServer:
         """
         :return: client_socket for the given key
         """
-        return self.ring.get_node(key), None
+        return self.clients[self.ring.get_node(key)][1], None
 
-    def _delist_unavailable_server(self, client_socket):
+    def _delist_unavailable_server(self, client_address):
         """
         The health check metrics found an unavailable server. It should be removed from the server space.
         :return: None
         """
-        self.ring.remove_node(client_socket)
+        self.ring.remove_node(client_address[0])
 
     def stats(self):
         """

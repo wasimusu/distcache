@@ -122,16 +122,14 @@ class CacheClient:
         :return:
         """
         print("Monitoring queries from server and responding...")
+        self.client_socket.settimeout(20)
         while True:
-            try:
-                response = self.client_socket.recv(config.HEADER_LENGTH)
-                if not response:
-                    continue
-                message_length = int(response.decode(config.FORMAT))
-                message = self.client_socket.recv(message_length)
-                self.execute_query(message)
-            except ConnectionResetError as err:
-                print(err)
+            response = self.client_socket.recv(config.HEADER_LENGTH)
+            if not response:
+                continue
+            message_length = int(response.decode(config.FORMAT))
+            message = self.client_socket.recv(message_length)
+            self.execute_query(message)
 
     def parse_message(self, message):
         """
