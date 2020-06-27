@@ -1,6 +1,7 @@
-from src.cache_server import CacheServer
+from distcache.cache_server import CacheServer
 import time
 import random
+from PIL import Image
 
 server = CacheServer(5)
 server.spawn()

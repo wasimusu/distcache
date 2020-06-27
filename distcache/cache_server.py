@@ -3,10 +3,10 @@ import threading
 import json
 import os
 
-from src import configure as config
-from src.consistenthashing import ConsistentHashing
-from src import utils
-from src import logger
+from distcache import configure as config
+from distcache.consistent_hashing import ConsistentHashing
+from distcache import utils
+from distcache import logger
 
 config = config.config()
 

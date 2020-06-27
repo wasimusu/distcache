@@ -1,7 +1,8 @@
-### Cached (Distributed Cache)
-cached is a python open-source distributed in-memory cache and database.
+### DistCache (Distributed Cache)
+Distcache is a open-source distributed in-memory cache and database.
 Operations are mostly asynchronous to achieve high performance.
-It is implemented purely in python without any external dependency.
+It is implemented purely in python without any external dependency 
+which should make it easier to install and get started with.
 One of design goal of this project is ease of use and less cognitive load to users of
 similar caching/database systems like Redis, Memcached.
 
@@ -16,6 +17,9 @@ similar caching/database systems like Redis, Memcached.
 - Log replay or log reconstruction to rebuild cache from log
 - The API is similar to memcached
 HealthServer regular pings clients to ask if they are alive.
+- For now, the cache supports all basic python types and objects that are mix of those types.
+Support for images, pdf documents, binary types is coming soon.
+- Hassle free installation as there is no external dependency. It's a pure python implementation.
 
 # Platform
 * Linux
@@ -27,13 +31,9 @@ HealthServer regular pings clients to ask if they are alive.
 - get
 - gets
 
-### TODO
-- Add tests
-- Add benchmarks
-
 ### Install
 ```
-pip install -r requirements.txt
+pip install distcache
 ```
 
 ### Usage

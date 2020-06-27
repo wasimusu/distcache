@@ -2,8 +2,8 @@ import socket
 import threading
 import time
 
-from src import configure as config
-from src import utils
+from distcache import configure as config
+from distcache import utils
 
 config = config.config()
 

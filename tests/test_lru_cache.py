@@ -1,7 +1,11 @@
+"""
+Tests distcache/lru_cache.py
+"""
 import unittest
+from distcache import lru_cache
 
 
-class HeartbeatTest(unittest.TestCase):
+class LRUCacheTest(unittest.TestCase):
     def test_something(self):
         self.assertEqual(True, True)
 

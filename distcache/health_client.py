@@ -1,5 +1,5 @@
 import socket
-from src import configure as config
+from distcache import configure as config
 
 config = config.config()
 

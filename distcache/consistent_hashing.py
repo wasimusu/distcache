@@ -43,6 +43,9 @@ Example usage:
     # >>>weights = [3, 3, 3]
     # >>>ring = ConsistentHashing(servers, weights)
     # >>>server = ring.get_node('my_key')
+
+TODO: Allow users to specify both number of replicas and weight of servers
+TODO: Use a better hashing technique. Something that distributes more uniformly among the keys.
 """
 from bisect import bisect_right, insort
 

@@ -5,9 +5,9 @@ Still a cache server. This does not interact with the client.
 import pickle
 import socket
 
-from src import configure as config
-from src import utils
-from src.lru_cache import LRUCache
+from distcache import configure as config
+from distcache import utils
+from distcache.lru_cache import LRUCache
 
 config = config.config()
 
