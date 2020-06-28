@@ -7,3 +7,5 @@
 *.json
 dist/*.*
 *.pyo
+*.in
+!MANIFEST.in
