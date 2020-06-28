@@ -10,4 +10,5 @@ python:
 install: pip install -r requirements.txt
 
 script:
+  - pwd
   - python -m unittest discover tests
