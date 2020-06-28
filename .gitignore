@@ -5,3 +5,5 @@
 !requirements.txt
 *.csv
 *.json
+dist/*.*
+*.pyo

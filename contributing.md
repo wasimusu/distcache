@@ -2,7 +2,7 @@ Contribution to this project is more than welcome.
 
 ### New contributors
 The many different ways to contribute. See project description for the detailed list of tasks.
-- Implementing any of the TODOs in the [project description](docs/description.md). Just nobody else is working on the same thing.
+- Implementing any of the TODOs in the [project description](description.md). Just nobody else is working on the same thing.
 - Writing sample codes
 - Bug fixes
 - Documentation
