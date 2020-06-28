@@ -9,7 +9,7 @@ def send_message(message, client_socket, HEADER_LENGTH, FORMAT):
     sends message on the client_socket
     """
     message = pickle.dumps(message)
-    send_length = f"{len(message):<{HEADER_LENGTH}}"
+    send_length = "{:<{}}".format(len(message), HEADER_LENGTH)
     client_socket.send(bytes(send_length, FORMAT))
     client_socket.send(message)
 
