@@ -1,6 +1,5 @@
 import json
 from collections import deque
-import asyncio
 
 class Logger:
     def __init__(self, filename='cache.json', mode='a', batch_size=1):
