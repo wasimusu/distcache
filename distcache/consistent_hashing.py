@@ -39,10 +39,10 @@ server are sent to the next server.
 Notes: We compute position for servers until there is no collision.
 
 Example usage:
-    # >>>servers = ['192.168.0.246:11212', '192.168.0.247:11212', '192.168.0.249:11212']
-    # >>>weights = [3, 3, 3]
-    # >>>ring = ConsistentHashing(servers, weights)
-    # >>>server = ring.get_node('my_key')
+    servers = ['192.168.0.246:11212', '192.168.0.247:11212', '192.168.0.249:11212']
+    weights = [3, 3, 3]
+    ring = ConsistentHashing(servers, weights)
+    server = ring.get_node('my_key')
 
 TODO: Allow users to specify both number of replicas and weight of servers
 TODO: Use a better hashing technique. Something that distributes more uniformly among the keys.
