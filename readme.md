@@ -8,6 +8,8 @@ similar caching/database systems like Redis, Memcached.
 
 #### Build and test status
 <img src="https://travis-ci.com/wasimusu/dcache.svg?branch=master" width="100">
+<img src='https://distcache.readthedocs.io/en/latest/?badge=latest' height="20">
+[![Documentation Status](https://readthedocs.org/projects/distcache/badge/?version=latest)](https://distcache.readthedocs.io/en/latest/?badge=latest)
 
 ### Features
 1. All basic python data types and objects made from their combination are supported. For instance, int, str, dict, set, tuple, list, etc and their objects that have only these types as their attributes are supported.
