@@ -10,3 +10,5 @@ dist/*.*
 *.in
 !MANIFEST.in
 *.xml
+distcache.egg-info
+dist
