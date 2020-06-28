@@ -16,7 +16,7 @@ The server is always listening to the client. It needs to detect if the client i
 
 
 class CacheServer:
-    def __init__(self, num_virtual_replicas=5, expire=0, reconstruct=False):
+    def __init__(self, num_virtual_replicas=5, expire=0, filename=None, reconstruct=False):
         """
         :param[int] num_virtual_replicas: number of virtual replicas of each cache server
         :param[int] expire: expiration time for keys in seconds.
@@ -52,7 +52,7 @@ class CacheServer:
 
         # Logging
         # TODO: If there is already a cache.json file, run reconstruction
-        self.filename = 'cache.json'
+        self.filename = 'cache.json' if filename is None else filename
         self.logger = logger.Logger(filename=self.filename, mode='a', batch_size=1)
 
     def spawn(self):

@@ -10,19 +10,24 @@ similar caching/database systems like Redis, Memcached.
 <img src="https://travis-ci.com/wasimusu/dcache.svg?branch=master" width="100">
 
 ### Features
-- Single server or distributed server cache
-- The cache server keeps track of health of cache clients using HealthServer. 
-- Cache is available unless all PCs fail
-- Logging of key cache operations 
-- Log replay or log reconstruction to rebuild cache from log
-- The API is similar to memcached
-HealthServer regular pings clients to ask if they are alive.
-- For now, the cache supports all basic python types and objects that are mix of those types.
-Support for images, pdf documents, binary types is coming soon.
-- Hassle free installation as there is no external dependency. It's a pure python implementation.
+1. All basic python data types and objects made from their combination are supported. For instance, int, str, dict, set, tuple, list, etc and their objects that have only these types as their attributes are supported.
+2. Key cache operations are logged so when the server fails, the cache can be reconstructed from the log files.
+3. The APIs are similar to Memcached and Redis to reduce cognitive when migrating between platforms.
+4. Since, distcache has pure python implementation the installation process should painless. It's makes it easier to get started up and running.
+5. Its' architecture assumes that the cache clients and servers can fail and plans for it. The impact is minimal on adding and removing cache servers.
+
+### Coming Up
+1. Health monitoring of clients and servers.
+2. Support for binary data, images, pdf documents.
+
+### Install
+```
+pip install distcache
+```
 
 # Platform
 * Linux
+* Windows
 * Python 2.7 to Python 3.5
 
 #### Cached Commands/functions
@@ -30,11 +35,6 @@ Support for images, pdf documents, binary types is coming soon.
 - delete
 - get
 - gets
-
-### Install
-```
-pip install distcache
-```
 
 ### Usage
 - You have multiple servers serving users.

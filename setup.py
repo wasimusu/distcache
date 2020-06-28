@@ -9,7 +9,7 @@ setup(
     description='Distcache is a python open-source distributed in-memory cache and database.',
     packages=['distcache', 'usage', 'benchmark', 'tests'],
     license='MIT License ',
-    long_description=open('readme.md').read(),
+    long_description=open('readme.rst').read(),
     long_description_content_type='text/markdown',
     project_urls={
         "Source Code": "https://github.com/wasimusu/distcache",
