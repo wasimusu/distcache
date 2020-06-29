@@ -1,20 +1,24 @@
 """
 Implementation of LRU Cache.
+
 Implementing Cache in a separate class/file allows for robust testing and is a practice of loose-coupling.
 It allows, in future, to implement other types of cache (eviction policy) and just interchange different types of cache.
 Also, it allows clean code, in other places using cache.
 Allows for easier reasoning of code.
 
-# Tested against leetcode's test cases: https://leetcode.com/submissions/detail/359080389/
+# Tested against leetcode's test cases: https://leetcode.com/submissions/detail/359080389/.
 In project, test cases would be way better though.
 """
 
 
 class LRUCache:
+    """
+    Implements LRU Cache
+    """
+
     def __init__(self, capacity=100):
         """
         :param capacity: number of items to be stored in the cache. That's our cache capacity for now.
-        For now
         """
         # TODO: Add time expiration.
         # TODO: Instead of item counts, use memory usage as cache capacity
@@ -30,6 +34,8 @@ class LRUCache:
         """
         Get the value corresponding to the key.
         For now, the value of keys can not be boolean
+
+        :param key: the key whose value is to be retrieved
         :return: value of the key if it exists, otherwise False.
         """
         value, _ = self.cache.get(key, (self.key_not_found, -1))
@@ -43,7 +49,10 @@ class LRUCache:
     def add(self, key, diff):
         """
         Add diff to the value corresponding to key in a thread safe manner.
-        :param diff: the amount to be added to the value of key
+
+        :param diff: (int, float, double) the amount to be added to the value of key
+        :param key: the key on which operation is to be carried out
+
         :return: boolean indicating if the operation was successful or not.
         """
         value, _ = self.cache.get(key, (self.key_not_found, -1))
@@ -59,6 +68,8 @@ class LRUCache:
         The server decided the key value be stored in this client.
         If it is new, just add to the cache
         If the key is old, update it with new value and also the LRU
+
+        :param key: key whose value is to be set. It can both be new key or previously stored key.
         :return: boolean indicating success of the operation
         """
         if key in self.cache:
@@ -73,12 +84,15 @@ class LRUCache:
         self.time_key[self.time] = key
         self.time += 1
 
-        self.lru_eviction()
+        self._lru_eviction()
         return True
 
     def delete(self, key):
         """
-        The server wants the key deleted.
+        Deletes key from server. Nothing happens if the key does not exist in the cache.
+
+        :param key: the key which is to be deleted from the cache
+        :returns: boolean indicating if the operation was successful or not.
         """
         if key in self.cache:
             _, time = self.cache[key]
@@ -86,9 +100,10 @@ class LRUCache:
             del self.time_key[time]
         return True
 
-    def lru_eviction(self):
+    def _lru_eviction(self):
         """
         Implements LRU cache eviction on the cache
+
         :return: None
         """
         while self.cache.__len__() > self.capacity:

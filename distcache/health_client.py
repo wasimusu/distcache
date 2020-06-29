@@ -5,7 +5,15 @@ config = config.config()
 
 
 class HealthClient:
+    """
+    Implements a health client to respond to health probes from health server
+    """
+
     def __init__(self):
+        """
+        Implements a health client to send report of CacheClient
+        """
+
         # ACK Message details
         self.ACK_HEADER = 3
         self.ACK_FORMAT = 'utf-8'

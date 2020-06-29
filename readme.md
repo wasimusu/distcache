@@ -6,6 +6,8 @@ which should make it easier to install and get started with.
 One of design goal of this project is ease of use and less cognitive load to users of
 similar caching/database systems like Redis, Memcached.
 
+See [wiki](https://github.com/wasimusu/distcache/wiki) or [readthedocs](https://distcache.readthedocs.io/en/latest/) for extensive documentation.
+
 #### Build and test status
 <img src="https://travis-ci.com/wasimusu/distcache.svg?branch=master" width="100">
 <img src="https://readthedocs.org/projects/distcache/badge/?version=latest">

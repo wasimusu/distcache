@@ -13,6 +13,11 @@ config = config.config()
 
 
 class CacheClient:
+    """
+    Implements cache client. It has different types of cache eviction policies at disposal.
+    It responds to queries of cache server.
+    """
+
     def __init__(self, capacity=100):
         """
         :param capacity: capacity of the cache in MBs

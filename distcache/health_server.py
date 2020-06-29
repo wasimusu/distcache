@@ -9,7 +9,14 @@ config = config.config()
 
 
 class HealthServer:
+    """
+    Implements a health server to monitor health of all clients and report it to the cache server.
+    """
+
     def __init__(self):
+        """
+        Initializes a HealthServer object.
+        """
         # Client details
         self.clients = []
         self.unhealthy_clients = []  # list of client_socket
@@ -38,9 +45,9 @@ class HealthServer:
 
     def probe_health(self, client_socket, client_address):
         """
-        Send heart beat every k second.
-        If three heart beat requests are not acknowledged, the client is dead.
-        :param client_socket: client socket
+        Sends heart beat every k second. If three heart beat requests are not acknowledged for n times, the client is dead.
+
+        :param client_socket: client socket on which health probes are to be sent and response received.
         :param client_address: client address
         :return: None
         """
@@ -75,7 +82,8 @@ class HealthServer:
 
     def monitor(self):
         """
-        Monitor the health of the clients.
+        Listens for new HealthClient connections. Monitors the health of the clients.
+
         :return: None
         """
         print("Monitoring the clients...")
@@ -89,8 +97,9 @@ class HealthServer:
     def report_health(self, message, client_socket):
         """
         Report the cache clients health to the server
-        :param message: any message. in this case list of unavailable servers
-        :param client_socket: socket connected to the server
+
+        :param message: any message. In this case list of unavailable servers
+        :param client_socket: socket object connected to the cache server
         :return: None
         """
         while True:
@@ -106,6 +115,7 @@ class HealthServer:
     def summary(self):
         """
         Keep logging the number of healthy clients in a fixed time interval
+
         :return: None
         """
         while True:

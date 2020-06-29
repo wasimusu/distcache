@@ -31,6 +31,11 @@ Platform
 * Windows
 * Python 2.7 to Python 3.5
 
+APIs
+====
+:doc:`All distcache APIs <apis>`
+
+
 Usage
 =====
 

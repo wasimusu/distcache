@@ -16,10 +16,14 @@ The server is always listening to the client. It needs to detect if the client i
 
 
 class CacheServer:
+    """
+    Implements cache server. It responds to user requests, monitors health of cache clients.
+    """
+
     def __init__(self, num_virtual_replicas=5, expire=0, filename=None, reconstruct=False):
         """
-        :param[int] num_virtual_replicas: number of virtual replicas of each cache server
-        :param[int] expire: expiration time for keys in seconds.
+        :param num_virtual_replicas: number of virtual replicas of each cache server
+        :param expire: expiration time for keys in seconds.
         """
         self.num_virtual_replicas = num_virtual_replicas
         self.expire = expire

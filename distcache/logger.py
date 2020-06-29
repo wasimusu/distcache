@@ -1,11 +1,19 @@
 import json
 from collections import deque
 
+
 class Logger:
+    """
+    Implements a simple logger
+    """
+
     def __init__(self, filename='cache.json', mode='a', batch_size=1):
         """
-        :param filename: Output filename
-        :param batch_size: To write objects in batches, increase the value of batch_size
+        Initializes Logger object:
+
+        :param filename: name of the file in which logs are to be stored/written.
+        :param batch_size: Number of logs to accumulate before log is written.
+        To write objects in batches, increase the value of batch_size.
         """
         self.filename = filename
         self.batch_size = batch_size
@@ -15,12 +23,15 @@ class Logger:
     def log(self, object):
         """
         Write objects in batches to the log file
+
         :param object: basically anything [int, str, list, etc]
+
         For instance:
             ("set", "hi", "greeting"),
             ("set", 1, 100),
             ("del", 1)
-        :return: None
+
+        :returns: None
         """
         self.logs.append(object)
         if len(self.logs) == self.batch_size:
@@ -28,7 +39,7 @@ class Logger:
 
     def flush(self):
         """
-        Writes whatever object is in the log queue to the log file
+        Writes whatever object is in the log queue is written to the disk.
         No worries if someone appended to the logs when it is being written
         """
         n = len(self.logs)
