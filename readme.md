@@ -31,11 +31,41 @@ pip install distcache
 * Windows
 * Python 2.7 to Python 3.5
 
-#### Cached Commands/functions
-- set (can be used to update as well, updates the LRU too)
-- delete
-- get
-- gets
+#### Same Usage Code
+Run server.py and client.py on server and client respectively. You can run client.py on as many PCs but remember 
+to ask the server to spawn it once you run client.py. You can run both server and one or more client.py on the same PC.
+It will create both server and client locally.
+
+server.py
+```
+from distcache.cache_server import CacheServer
+
+server = CacheServer(5)
+server.spawn()
+
+# Cache operations
+server.set("brazil", "football")
+server.set("harry", "potter")
+server.set(1, 2)
+server.set(3, 6)
+server.set("hey", "hola")
+server.get("hey")
+server.get(1)
+server.set("hey", "there")
+server.get("hey")
+server.delete(3)
+server.get(3)
+server.get("brazil")
+```
+
+client.py
+```
+from distcache.cache_client import CacheClient
+
+client = CacheClient()
+client.monitor()
+```
+There are more usage codes in the usage directory.
 
 ### Usage
 - You have multiple servers serving users.

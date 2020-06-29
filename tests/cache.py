@@ -5,8 +5,6 @@ from PIL import Image
 
 server = CacheServer(5)
 server.spawn()
-# server.spawn()
-# server.spawn()
 
 max_sleep = 5
 server.set("wasim", "akram")
