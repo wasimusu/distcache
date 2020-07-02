@@ -20,7 +20,7 @@
 import os
 import sys
 
-sys.path.append(0, os.path.abspath('../..'))  # root of the project
+sys.path.insert(0, os.path.abspath('../..'))  # root of the project
 sys.path.append(os.path.abspath('../../distcache'))  # dir containing source files
 
 # -- General configuration ------------------------------------------------
@@ -39,7 +39,6 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.ifconfig',
               'sphinx.ext.viewcode',
               'sphinx.ext.githubpages',
-              'rinoh.frontend.sphinx'
               ]
 
 # Add any paths that contain templates here, relative to this directory.
