@@ -37,7 +37,8 @@ class CacheClient:
     def register(self):
         """
         Just try connecting to the server. And it will register you.
-        :return: client_id
+
+        :returns: client_id
         """
         self.client_socket.connect(self.server_address)
         print("Client connected at address {}:{}".format(*self.server_address))
@@ -58,7 +59,7 @@ class CacheClient:
         The server can request you to store key, value pair
         The server can request you to delete key from cache
 
-        :return:None
+        :returns: None
         """
         print("Monitoring queries from server and responding...")
         self.client_socket.settimeout(30)  # TODO: Increasing timeout is not the solution.
