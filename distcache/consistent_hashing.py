@@ -99,6 +99,7 @@ class ConsistentHashing:
 
         :param node: node to be removed from the consistent hashing scheme.
         It will no longer be considered while hashing.
+
         :return: None
         """
         temp = []

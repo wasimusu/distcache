@@ -78,6 +78,7 @@ class CacheServer:
         """
         Continuously listens to health monitoring server.
         Health monitoring server sends list of unavailable servers if any.
+
         :return: None
         """
         client_socket, health_client_address = self.health_server_socket.accept()
@@ -113,6 +114,7 @@ class CacheServer:
     def get(self, key):
         """
         Get the value of key from the cache
+
         :return: corresponding value for the key
         """
         # Get the address of the server containing the key
@@ -129,6 +131,7 @@ class CacheServer:
         """
         Gets the values of keys from the cache. Same as get but avoids expensive network calls.
         If you want two keys which are on different server, gets is same as get or a bit slower.
+
         :return [list of values]: corresponding values for the keys
         """
         pass
@@ -136,6 +139,7 @@ class CacheServer:
     def delete(self, key):
         """
         Get the value of key from the cache
+
         :return: corresponding value for the key
         """
         # Get the address of the server containing the key
@@ -147,6 +151,7 @@ class CacheServer:
     def increment(self, key):
         """
         Increment value corresponding to the key in a thread-safe manner.
+
         :return: boolean indicating if the operation was successful or not.
         """
         return self.add(key, 1)
@@ -154,14 +159,15 @@ class CacheServer:
     def decrement(self, key):
         """
         Decrement value corresponding to the key in a thread-safe manner.
+
         :return: boolean indicating if the operation was successful or not.
-        :rtype: bool
         """
         return self.add(key, -1)
 
     def add(self, key, diff):
         """
         Add diff to the value corresponding to key in a thread safe manner.
+
         :param diff: the amount to be added to the value of key
         :return: boolean indicating if the operation was successful or not.
         :rtype: bool
@@ -180,6 +186,7 @@ class CacheServer:
     def _delist_unavailable_server(self, client_address):
         """
         The health check metrics found an unavailable server. It should be removed from the server space.
+
         :return: None
         """
         self.ring.remove_node(client_address[0])
@@ -187,6 +194,7 @@ class CacheServer:
     def stats(self):
         """
         Prints some of the important stats like hits, misses and total query counts
+
         :return: None
         """
         print("Total queries: ".format(self.query_count))
@@ -228,7 +236,8 @@ class CacheServer:
     def close(self):
         """
         Close the cache server. Close all of its clients.
-        :return:
+
+        :return: None
         """
         # Send (close) to every cache client.
         # Ask the health server to shutdown.
