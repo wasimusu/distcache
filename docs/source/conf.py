@@ -20,7 +20,7 @@
 import os
 import sys
 
-sys.path.append(os.path.abspath('../..'))  # root of the project
+sys.path.append(0, os.path.abspath('../..'))  # root of the project
 sys.path.append(os.path.abspath('../../distcache'))  # dir containing source files
 
 # -- General configuration ------------------------------------------------
