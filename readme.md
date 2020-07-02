@@ -18,6 +18,7 @@ See [wiki](https://github.com/wasimusu/distcache/wiki) or [readthedocs](https://
 3. The APIs are similar to Memcached and Redis to reduce cognitive when migrating between platforms.
 4. Since, distcache has pure python implementation the installation process should painless. It's makes it easier to get started up and running.
 5. Its' architecture assumes that the cache clients and servers can fail and plans for it. The impact is minimal on adding and removing cache servers.
+6. Thread safe increment and decrement operations on keys.
 
 ### Coming Up
 1. Health monitoring of clients and servers.
@@ -77,4 +78,4 @@ Similarly you can store product_id, session_id, user_id, etc.
 Cache the results. And, the figures vary and you can still use caching service. It just makes things faster.
 
 ### Contributing
-Please read [contributing](contributing.md) to learn how to contribute to this project.
+Please read [contributing](https://github.com/wasimusu/distcache/blob/master/contributing.md) to learn how to contribute to this project.
