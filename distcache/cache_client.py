@@ -1,105 +1,109 @@
 """
-Still a cache server. This does not interact with the client.
+Implements distcache client. It interacts with the users.
 """
 
-import pickle
 import socket
 
-from distcache import configure as config
+from distcache import configure as conf
+from distcache.consistent_hashing import ConsistentHashing
 from distcache import utils
-from distcache.lru_cache import LRUCache
 
-config = config.config()
 
+# Each client has list of all servers.
+# Do servers register with the client?
 
 class CacheClient:
     """
-    Implements cache client. It has different types of cache eviction policies at disposal.
-    It responds to queries of cache server.
+    Implements cache client. It responds to user requests.
+    ?? monitors health of cache clients.
     """
 
-    def __init__(self, capacity=100):
+    def __init__(self):
         """
-        :param capacity: capacity of the cache in MBs
         """
-        self.cache = LRUCache(capacity)
+        self.config = conf.config()
 
         # Communication configurations
-        self.FORMAT = config.FORMAT
-        self.HEADER_LENGTH = config.HEADER_LENGTH
+        self.FORMAT = self.config.FORMAT
+        self.HEADER_LENGTH = self.config.HEADER_LENGTH
 
         # Start the connection with the server. socket. connect
-        self.server_address = (config.IP, config.PORT)
+        self.server_address = (self.config.IP, self.config.PORT)
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.id = self.register()  # Congrats! You're registered with the server. Server now knows you IP, PORT
-        print("About: ", self.client_socket.getsockname(), self.id)
+        self.servers = self.config.get_server_pool()
+        self.ring = ConsistentHashing(self.config.server_pool)
 
-    def register(self):
+        for server in self.servers:
+            print("Connecting to {}:{}".format(*server))
+            self.client_socket.connect(server)
+
+    def _get_server_for_key(self, key):
         """
-        Just try connecting to the server. And it will register you.
-        :return:
+        :return: client_socket for the given key
         """
-        self.client_socket.connect(self.server_address)
-        print("Client connected at address {}:{}".format(*self.server_address))
+        return self.ring.get_node(key)
 
-        # TODO: Make sure a proper client_id is always received.
-        return utils.receive_message(self.client_socket, self.HEADER_LENGTH, self.FORMAT)
+    def execute_query(self, key, message):
+        # Get the address of the server containing the key
+        server_address = self._get_server_for_key(key)
+        print("Sending client message: {} to {}:{}".format(message, *server_address))
+        response = utils.send_receive_ack(message, self.client_socket, self.HEADER_LENGTH, self.FORMAT)
+        print("Response received: {}\n".format(response))
+        return response
 
-    def execute_query(self, message):
-        response = self.parse_message(message)
-        utils.send_message(response, self.client_socket, self.HEADER_LENGTH, self.FORMAT)
-        return
-
-    def monitor(self):
+    def set(self, key, value):
         """
-        A client has a few things to listen for.
-        The server may ping to monitor your health.
-        The server may request for key, value pair
-        The server can request you to store key, value pair
-        The server can request you to delete key from cache
-        :return:
+        Set or update the value of key from the cache. Also updates the LRU cache for already existing key or (key, value)
+        :return: bool value indicating if the operation was successful or not.
         """
-        print("Monitoring queries from server and responding...")
-        self.client_socket.settimeout(30)  # TODO: Increasing timeout is not the solution.
-        while True:
-            response = self.client_socket.recv(config.HEADER_LENGTH)
-            if not response:
-                continue
-            message_length = int(response.decode(config.FORMAT))
-            message = self.client_socket.recv(message_length)
-            self.execute_query(message)  # TODO: Should ultimately be an async operation
+        return self.execute_query(key, ("set", key, value))
 
-    def parse_message(self, message):
+    def get(self, key):
         """
-        Parse and execute the command
-        :param message: the message sent by the cache_server
-        :return: depends on the operation that was carried out after parsing message
+        Get the value of key from the cache
+        :return: corresponding value for the key
         """
-        # This should run in a separate thread
-        message = pickle.loads(message)
+        return self.execute_query(key, ("get", key))
 
-        if message[0] == "set":
-            print("set ", message[1:])
-            return self.cache.set(message[1], message[2])
+    def gets(self, keys):
+        """
+        Gets the values of keys from the cache. Same as get but avoids expensive network calls.
+        If you want two keys which are on different server, gets is same as get or a bit slower.
+        :return [list of values]: corresponding values for the keys
+        """
+        pass
 
-        elif message[0] == "del":
-            print("delete ", message[1:])
-            return self.cache.delete(message[1])
+    def delete(self, key):
+        """
+        Get the value of key from the cache
+        :return: corresponding value for the key
+        """
+        return self.execute_query(key, ("del", key))
 
-        elif message[0] == "get":
-            print("get ", message[1:])
-            return self.cache.get(message[1])
+    def increment(self, key):
+        """
+        Increment value corresponding to the key in a thread-safe manner.
+        :return: boolean indicating if the operation was successful or not.
+        """
+        return self.execute_query(key, ("add", key, 1))
 
-        elif message[0] == "add":
-            print("get ", message[1:])
-            return self.cache.add(message[1], message[2])
+    def decrement(self, key):
+        """
+        Decrement value corresponding to the key in a thread-safe manner.
+        :return: boolean indicating if the operation was successful or not.
+        :rtype: bool
+        """
+        return self.execute_query(key, ("add", key, -1))
 
-        else:
-            print("Only these keywords are supported: get, set, delete")
-
-        return message
+    def add(self, key, diff):
+        """
+        Add diff to the value corresponding to key in a thread safe manner.
+        :param diff: the amount to be added to the value of key
+        :return: boolean indicating if the operation was successful or not.
+        :rtype: bool
+        """
+        return self.execute_query(key, ("add", key, diff))
 
 
 if __name__ == '__main__':
     client = CacheClient()
-    client.monitor()

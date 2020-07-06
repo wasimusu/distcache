@@ -1,34 +1,34 @@
 import socket
 import threading
-import json
-import os
+import pickle
 
-from distcache import configure as config
-from distcache.consistent_hashing import ConsistentHashing
+from distcache import configure as conf
+from distcache.lru_cache import LRUCache
 from distcache import utils
 from distcache import logger
-
-config = config.config()
 
 """
 The server is always listening to the client. It needs to detect if the client is alive.
 """
 
 
+# TODO: Servers do not talk to each other
+
 class CacheServer:
     """
-    Implements cache server. It responds to user requests, monitors health of cache clients.
+    Implements cache client. It has different types of cache eviction policies at disposal.
+    It responds to queries of cache server.
     """
 
-    def __init__(self, num_virtual_replicas=5, expire=0, filename=None, reconstruct=False):
+    def __init__(self, num_virtual_replicas=5, capacity=100, expire=0, filename=None, reconstruct=False):
         """
         :param num_virtual_replicas: number of virtual replicas of each cache server
         :param expire: expiration time for keys in seconds.
         """
+        config = conf.config()
+
+        self.cache = LRUCache(capacity)
         self.num_virtual_replicas = num_virtual_replicas
-        self.expire = expire
-        self.ring = ConsistentHashing()
-        self.cache_server_count = 0
 
         # Cache server configuration
         self.ADDRESS = config.ADDRESS
@@ -37,17 +37,6 @@ class CacheServer:
         self.clients = {}  # (ip, (id, socket, ip:port)
         print("Starting server at {}:{}".format(*self.ADDRESS))
         self.server_socket.listen(config.LISTEN_CAPACITY)
-
-        # Health monitor server configuration
-        self.health_server_address = (config.IP, config.HEALTH_REPORT_PORT)
-        self.health_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.health_server_socket.bind(self.health_server_address)
-        self.health_server_socket.listen()  # Only one health server is reporting health status
-        threading.Thread(target=self.monitor_health).start()
-
-        # Cache stats
-        self.cache_hits = 0
-        self.query_count = 0
 
         # Communication configuration
         self.HEADER_LENGTH = config.HEADER_LENGTH
@@ -59,186 +48,66 @@ class CacheServer:
         self.filename = 'cache.json' if filename is None else filename
         self.logger = logger.Logger(filename=self.filename, mode='a', batch_size=1)
 
-    def spawn(self):
-        """
-        Listens for new connections. And add it as a cache server.
-        """
-        while True:
-            client_socket, client_address = self.server_socket.accept()
-            utils.send_message(self.cache_server_count, client_socket, self.HEADER_LENGTH, self.FORMAT)
+        self.monitor()  # start the server
 
-            self.clients[client_address[0]] = (self.cache_server_count, client_socket, client_address)
-            self.ring.add_node(client_address[0], self.num_virtual_replicas)  # Consistent hashing on IP Address alone
-            break
+    def parse_message(self, message):
+        """
+        Parse and execute the command
+        :param message: the message sent by the cache_server
+        :return: depends on the operation that was carried out after parsing message
+        """
+        # This should run in a separate thread
+        message = pickle.loads(message)
+        self.logger.log(message)
 
-        self.cache_server_count += 1
-        print("Spawned a client at {}:{}".format(*client_address))
+        if message[0] == "set":
+            print("set ", message[1:])
+            return self.cache.set(message[1], message[2])
 
-    def monitor_health(self):
-        """
-        Continuously listens to health monitoring server.
-        Health monitoring server sends list of unavailable servers if any.
-        :return: None
-        """
-        client_socket, health_client_address = self.health_server_socket.accept()
-        print("Connected to health monitoring server at {}:{}".format(*health_client_address))
-        while True:
-            try:
-                unavailable_servers = utils.receive_message(client_socket, self.HEADER_LENGTH, self.FORMAT)
-                response = True if unavailable_servers else False
-                if response:
-                    for server in unavailable_servers:
-                        self._delist_unavailable_server(server)
-                utils.send_message(response, client_socket, self.HEADER_LENGTH, self.FORMAT)
-            except:
-                pass  # We will continue to monitor the health of servers until we die
+        elif message[0] == "del":
+            print("delete ", message[1:])
+            return self.cache.delete(message[1])
 
-    def send_receive(self, message, client_socket):
-        print("Sending client message: {}".format(message))
-        response = utils.send_receive_ack(message, client_socket, self.HEADER_LENGTH, self.FORMAT)
-        print("Response received: {}\n".format(response))
-        return response
+        elif message[0] == "get":
+            print("get ", message[1:])
+            return self.cache.get(message[1])
 
-    def set(self, key, value):
-        """
-        Set or update the value of key from the cache. Also updates the LRU cache for already existing key or (key, value)
-        :return: bool value indicating if the operation was successful or not.
-        """
-        # Get the address of the server containing the key
-        client_socket, client_address = self._get_server_for_key(key)
-        response = self.send_receive(("set", key, value), client_socket)
-        self.logger.log(("set", key, value))
-        return True if response else False
+        elif message[0] == "add":
+            print("get ", message[1:])
+            return self.cache.add(message[1], message[2])
 
-    def get(self, key):
-        """
-        Get the value of key from the cache
-        :return: corresponding value for the key
-        """
-        # Get the address of the server containing the key
-        client_socket, client_address = self._get_server_for_key(key)
-        response = self.send_receive(("get", key), client_socket)
-        self.logger.log(("get", key))
+        else:
+            print("Only these keywords are supported: get, set, delete")
 
-        self.query_count += 1
-        self.cache_hits += (response != False)
+        return message
 
-        return response
-
-    def gets(self, keys):
+    def handle_client(self, client_socket, client_address):
         """
-        Gets the values of keys from the cache. Same as get but avoids expensive network calls.
-        If you want two keys which are on different server, gets is same as get or a bit slower.
-        :return [list of values]: corresponding values for the keys
-        """
-        pass
-
-    def delete(self, key):
-        """
-        Get the value of key from the cache
-        :return: corresponding value for the key
-        """
-        # Get the address of the server containing the key
-        client_socket, client_address = self._get_server_for_key(key)
-        response = self.send_receive(("del", key), client_socket)
-        self.logger.log(("del", key))
-        return response
-
-    def increment(self, key):
-        """
-        Increment value corresponding to the key in a thread-safe manner.
-        :return: boolean indicating if the operation was successful or not.
-        """
-        return self.add(key, 1)
-
-    def decrement(self, key):
-        """
-        Decrement value corresponding to the key in a thread-safe manner.
-        :return: boolean indicating if the operation was successful or not.
-        :rtype: bool
-        """
-        return self.add(key, -1)
-
-    def add(self, key, diff):
-        """
-        Add diff to the value corresponding to key in a thread safe manner.
-        :param diff: the amount to be added to the value of key
-        :return: boolean indicating if the operation was successful or not.
-        :rtype: bool
-        """
-        client_socket, client_address = self._get_server_for_key(key)
-        response = self.send_receive(("add", key, diff), client_socket)
-        self.logger.log(("add", key, diff))
-        return response
-
-    def _get_server_for_key(self, key):
-        """
-        :return: client_socket for the given key
-        """
-        return self.clients[self.ring.get_node(key)][1], None
-
-    def _delist_unavailable_server(self, client_address):
-        """
-        The health check metrics found an unavailable server. It should be removed from the server space.
-        :return: None
-        """
-        self.ring.remove_node(client_address[0])
-
-    def stats(self):
-        """
-        Prints some of the important stats like hits, misses and total query counts
-        :return: None
-        """
-        print("Total queries: ".format(self.query_count))
-        print("Cache hits   : {}\t{.2f}".format(self.cache_hits, self.cache_hits / self.query_count))
-        print("Cache miss   : {}\t{.2f}".format(self.cache_hits, self.cache_hits / self.query_count))
-
-    def reconstruct_from_log(self):
-        """
-        Usage:
-            Start the server.
-            Spawn the clients.
-            Then ask the server to reconstruct from log file
-        """
-        # Can't reconstruct if there is no file
-        if not os.path.exists(self.filename):
-            return
-
-        with open(self.filename, mode='r') as file:
-            for line in file.readlines():
-                object = json.loads(line)
-                print("Object : ", object)
-
-                # Now you need to parse
-                if object[0] == "set":
-                    self.set(object[1], object[2])
-
-                elif object[0] == "get":
-                    self.get(object[1])
-
-                elif object[0] == "del":
-                    self.delete(object[1])
-
-                elif object[0] == "gets":
-                    self.gets(object[1:])
-
-                else:
-                    pass
-
-    def close(self):
-        """
-        Close the cache server. Close all of its clients.
+        Listen to queries from specific client.
+        :param client_socket:
+        :param client_address:
         :return:
         """
-        # Send (close) to every cache client.
-        # Ask the health server to shutdown.
+        while True:
+            response = client_socket.recv(self.HEADER_LENGTH)
+            if not response:
+                continue
+            message_length = int(response.decode(self.FORMAT))
+            message = client_socket.recv(message_length)
+            response = self.parse_message(message)
+            # TODO: Should ultimately be an async operation
+            utils.send_message(response, client_socket, self.HEADER_LENGTH, self.FORMAT)
 
-        self.logger.close()  # Flushes the objects in logging queues as well
-
-        # Just an interesting thought. If the server shuts down, eventually everyone shuts down.
-        self.health_server_socket.close()
-        self.server_socket.close()
+    def monitor(self):
+        """
+        Listens for new connections and queries from the clients. And add it as a cache server.
+        """
+        while True:
+            print("Looking for new connections")
+            client_socket, client_address = self.server_socket.accept()
+            print("New client connection accepted: {}:{}".format(*client_address))
+            threading.Thread(target=self.handle_client, args=[client_socket, client_address]).start()
 
 
 if __name__ == '__main__':
-    pass
+    server = CacheServer()

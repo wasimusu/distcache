@@ -43,6 +43,7 @@ And opens up cache design for testing.
 - CacheServer starts HealthServers. CacheClients start HealthClients. 
 - Make sure it works for single server node i.e. 
 the communication between client and server works flawlessly. Cache is fine. :)
+- Allow users to change the communication protocol: TCP/UDP/Unix Sockets.
 
 ##### TODO for persistent storage
 - Add support for binary objects, images, pdf documents, and so.

@@ -16,3 +16,17 @@ class config:
         self.HEALTH_REPORT_PORT = self.HEALTH_PROBE_PORT + 100
         self.PROBE_EVERY_K_SECOND = 5
         self.HEARTBEAT_THRESH = 5  # k consecutive missing heartbeat means the server is dead
+
+        # This has to be same across the distributed system
+        # Has to be synced using some sync mechanisms like Anisible, Chef/Puppet
+        # Each server in the server_pool has to be live/healthy
+        self.server_pool = [self.ADDRESS]
+
+    def get_server_pool(self):
+        return self.server_pool
+
+    def add_server(self, server):
+        self.server_pool.append(server)
+
+    def remove_server(self, server):
+        self.server_pool.remove(server)
