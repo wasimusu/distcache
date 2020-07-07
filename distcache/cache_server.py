@@ -12,8 +12,6 @@ The server is always listening to the client. It needs to detect if the client i
 """
 
 
-# TODO: Servers do not talk to each other
-
 class CacheServer:
     """
     Implements cache client. It has different types of cache eviction policies at disposal.
@@ -61,19 +59,15 @@ class CacheServer:
         self.logger.log(message)
 
         if message[0] == "set":
-            print("set ", message[1:])
             return self.cache.set(message[1], message[2])
 
         elif message[0] == "del":
-            print("delete ", message[1:])
             return self.cache.delete(message[1])
 
         elif message[0] == "get":
-            print("get ", message[1:])
             return self.cache.get(message[1])
 
         elif message[0] == "add":
-            print("get ", message[1:])
             return self.cache.add(message[1], message[2])
 
         else:
@@ -81,7 +75,7 @@ class CacheServer:
 
         return message
 
-    def handle_client(self, client_socket, client_address):
+    def handle_client(self, client_socket):
         """
         Listen to queries from specific client.
         :param client_socket:
@@ -95,7 +89,6 @@ class CacheServer:
             message_length = int(response.decode(self.FORMAT))
             message = client_socket.recv(message_length)
             response = self.parse_message(message)
-            # TODO: Should ultimately be an async operation
             utils.send_message(response, client_socket, self.HEADER_LENGTH, self.FORMAT)
 
     def monitor(self):
@@ -103,10 +96,9 @@ class CacheServer:
         Listens for new connections and queries from the clients. And add it as a cache server.
         """
         while True:
-            print("Looking for new connections")
             client_socket, client_address = self.server_socket.accept()
             print("New client connection accepted: {}:{}".format(*client_address))
-            threading.Thread(target=self.handle_client, args=[client_socket, client_address]).start()
+            threading.Thread(target=self.handle_client, args=[client_socket]).start()
 
 
 if __name__ == '__main__':

@@ -34,7 +34,6 @@ class CacheClient:
         self.ring = ConsistentHashing(self.config.server_pool)
 
         for server in self.servers:
-            print("Connecting to {}:{}".format(*server))
             self.client_socket.connect(server)
 
     def _get_server_for_key(self, key):
@@ -46,9 +45,7 @@ class CacheClient:
     def execute_query(self, key, message):
         # Get the address of the server containing the key
         server_address = self._get_server_for_key(key)
-        print("Sending client message: {} to {}:{}".format(message, *server_address))
         response = utils.send_receive_ack(message, self.client_socket, self.HEADER_LENGTH, self.FORMAT)
-        print("Response received: {}\n".format(response))
         return response
 
     def set(self, key, value):

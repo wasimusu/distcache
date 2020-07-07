@@ -13,40 +13,24 @@ You can also run the cache client implementation in this package.
 
 Summary: cache is useful when the compute time is more than fetching it from some remote computer.
 """
-import time
 
 from benchmark.utils import timeit
 from distcache.cache_client import CacheClient
-import random
 
 
 class ProductDBBench:
     def __init__(self):
         self.client = CacheClient()
 
-    def expensive_compute_func(self, key):
-        time.sleep(random.randint(1, 5) / 10.0)  # Sleep between 1 to 5ms
-        return key * key * key
-
     @timeit
-    def queries_with_cache(self):
-        # Populate the cache
-        for i in range(10, 20):
-            self.client.set(i, self.expensive_compute_func(i))
-
-        # Make queries
+    def set_values(self):
+        """
+        The current benchmark is to 8000ms for 100 values.
+        """
         for i in range(100):
-            self.client.get(random.randint(10, 20))
-
-    @timeit
-    def queries_without_cache(self):
-        # Make queries
-        for i in range(100):
-            print(i)
-            self.expensive_compute_func(random.randint(10, 20))
+            self.client.set(i, i)
 
 
 if __name__ == '__main__':
     product_bench = ProductDBBench()
-    product_bench.queries_with_cache()
-    product_bench.queries_without_cache()
+    product_bench.set_values()
