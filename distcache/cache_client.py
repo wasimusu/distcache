@@ -28,13 +28,8 @@ class CacheClient:
         self.HEADER_LENGTH = self.config.HEADER_LENGTH
 
         # Start the connection with the server. socket. connect
-        self.server_address = (self.config.IP, self.config.PORT)
-        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.servers = self.config.get_server_pool()
         self.ring = ConsistentHashing(self.config.server_pool)
-
-        for server in self.servers:
-            self.client_socket.connect(server)
 
     def _get_server_for_key(self, key):
         """
@@ -43,9 +38,23 @@ class CacheClient:
         return self.ring.get_node(key)
 
     def execute_query(self, key, message):
+        """
+        The central place to execute all the client queries.
+        It finds the server for the query. Creates a socket. Sends message to the server.
+        And conveys the server response to the calling function.
+
+        :param key: the user defined key which is to be manipulated.
+        :param message: tuple of key plus operation and optionally values.
+        :return: response of the server
+        """
         # Get the address of the server containing the key
         server_address = self._get_server_for_key(key)
+
+        # Create a socket to send the message to the server
+        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client_socket.connect(server_address)
         response = utils.send_receive_ack(message, self.client_socket, self.HEADER_LENGTH, self.FORMAT)
+        self.client_socket.close()
         return response
 
     def set(self, key, value):

@@ -18,7 +18,7 @@ class CacheServer:
     It responds to queries of cache server.
     """
 
-    def __init__(self, num_virtual_replicas=5, capacity=100, expire=0, filename=None, reconstruct=False):
+    def __init__(self, address=None, num_virtual_replicas=5, capacity=100, expire=0, filename=None, reconstruct=False):
         """
         :param num_virtual_replicas: number of virtual replicas of each cache server
         :param expire: expiration time for keys in seconds.
@@ -29,7 +29,7 @@ class CacheServer:
         self.num_virtual_replicas = num_virtual_replicas
 
         # Cache server configuration
-        self.ADDRESS = config.ADDRESS
+        self.ADDRESS = address if address else config.ADDRESS
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.bind(self.ADDRESS)
         self.clients = {}  # (ip, (id, socket, ip:port)
@@ -102,4 +102,4 @@ class CacheServer:
 
 
 if __name__ == '__main__':
-    server = CacheServer()
+    server = CacheServer(address=('localhost', 2050))

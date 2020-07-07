@@ -16,19 +16,23 @@ Summary: cache is useful when the compute time is more than fetching it from som
 
 from benchmark.utils import timeit
 from distcache.cache_client import CacheClient
+from distcache.lru_cache import LRUCache
 
 
 class ProductDBBench:
     def __init__(self):
         self.client = CacheClient()
+        # self.client = LRUCache(10000000)
 
     @timeit
     def set_values(self):
         """
         The current benchmark is to 8000ms for 100 values.
+        However, the LRU Cache can set 10M keys in 9s.
         """
-        for i in range(100):
-            self.client.set(i, i)
+        # Cache operations
+        for i in range(10000):
+            self.client.set(i * 10, i)
 
 
 if __name__ == '__main__':

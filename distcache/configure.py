@@ -20,7 +20,7 @@ class config:
         # This has to be same across the distributed system
         # Has to be synced using some sync mechanisms like Anisible, Chef/Puppet
         # Each server in the server_pool has to be live/healthy
-        self.server_pool = [self.ADDRESS]
+        self.server_pool = [('localhost', 2050), ('localhost', 2030)]
 
     def get_server_pool(self):
         return self.server_pool
