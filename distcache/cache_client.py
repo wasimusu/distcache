@@ -4,7 +4,7 @@ Implements distcache client. It interacts with the users.
 
 import socket
 
-from distcache import configure as conf
+from distcache import config as conf
 from distcache.consistent_hashing import ConsistentHashing
 from distcache import utils
 

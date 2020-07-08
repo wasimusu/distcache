@@ -1,8 +1,10 @@
 import socket
 import threading
 import pickle
+import time
+import os
 
-from distcache import configure as conf
+from distcache import config as conf
 from distcache.lru_cache import LRUCache
 from distcache import utils
 from distcache import logger
@@ -18,18 +20,19 @@ class CacheServer:
     It responds to queries of cache server.
     """
 
-    def __init__(self, address=None, num_virtual_replicas=5, capacity=100, expire=0, filename=None, reconstruct=False):
+    def __init__(self, host='localhost', port=2050, capacity=100, expire=0, filename=0):
         """
         :param num_virtual_replicas: number of virtual replicas of each cache server
         :param expire: expiration time for keys in seconds.
+
+        Some other parameters to consider: socket_timeout, password
         """
         config = conf.config()
 
         self.cache = LRUCache(capacity)
-        self.num_virtual_replicas = num_virtual_replicas
 
         # Cache server configuration
-        self.ADDRESS = address if address else config.ADDRESS
+        self.ADDRESS = (host, port)
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.bind(self.ADDRESS)
         self.clients = {}  # (ip, (id, socket, ip:port)
@@ -42,11 +45,33 @@ class CacheServer:
         self.LISTEN_CAPACITY = config.LISTEN_CAPACITY
 
         # Logging
-        # TODO: If there is already a cache.json file, run reconstruction
-        self.filename = 'cache.json' if filename is None else filename
-        self.logger = logger.Logger(filename=self.filename, mode='a', batch_size=1)
+        self.dbname = 'cache.json' if filename is None else filename
+        self.logger = logger.Logger(filename=self.dbname, mode='a', batch_size=1)
 
+        self.save_every_k_seconds = config.save_every_k_seconds
+
+        self.reconstruct()
         self.monitor()  # start the server
+        threading.Thread(target=self.snapshot).start()
+
+    def snapshot(self):
+        """
+        Snapshot every conf.save_every_k_seconds
+        :return: None
+        """
+        while True:
+            time.sleep(self.save_every_k_seconds)
+            with open(self.dbname, mode='wb') as db:
+                pickle.dump(self.cache, db)
+
+    def reconstruct(self):
+        """
+        Load the cache from the database
+        :return: None
+        """
+        if os.path.exists(self.dbname):
+            with open(self.dbname, mode='rb') as db:
+                self.cache = pickle.load(db)
 
     def parse_message(self, message):
         """
@@ -102,4 +127,4 @@ class CacheServer:
 
 
 if __name__ == '__main__':
-    server = CacheServer(address=('localhost', 2050))
+    server = CacheServer(host='localhost', port=2050)

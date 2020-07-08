@@ -18,6 +18,7 @@ See [wiki](https://github.com/wasimusu/distcache/wiki) or [readthedocs](https://
 3. The APIs are similar to Memcached and Redis to reduce cognitive when migrating between platforms.
 4. Since, distcache has pure python implementation the installation process should painless. It's makes it easier to get started up and running.
 5. Its' architecture assumes that the cache clients and servers can fail and plans for it. The impact is minimal on adding and removing cache servers.
+6. Snapshot the servers at regular intervals to avoid cold starts upon crash or planned shutdowns
 
 ### Coming Up
 1. Health monitoring of clients and servers.
@@ -38,34 +39,32 @@ Run server.py and client.py on server and client respectively. You can run clien
 to ask the server to spawn it once you run client.py. You can run both server and one or more client.py on the same PC.
 It will create both server and client locally.
 
-server.py
-```
-from distcache.cache_server import CacheServer
-
-server = CacheServer(5)
-server.spawn()
-
-# Cache operations
-server.set("brazil", "football")
-server.set("harry", "potter")
-server.set(1, 2)
-server.set(3, 6)
-server.set("hey", "hola")
-server.get("hey")
-server.get(1)
-server.set("hey", "there")
-server.get("hey")
-server.delete(3)
-server.get(3)
-server.get("brazil")
-```
-
 client.py
 ```
 from distcache.cache_client import CacheClient
 
 client = CacheClient()
-client.monitor()
+
+# Cache operations
+client.set("brazil", "football")
+client.set("harry", "potter")
+client.set(1, 2)
+client.set(3, 6)
+client.set("hey", "hola")
+client.get("hey")
+client.get(1)
+client.set("hey", "there")
+client.get("hey")
+client.delete(3)
+client.get(3)
+client.get("brazil")
+```
+
+server.py
+```
+from distcache.cache_server import CacheServer
+
+server = CacheServer('localhost', 2050)
 ```
 There are more usage codes in the usage directory.
 

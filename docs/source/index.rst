@@ -31,6 +31,46 @@ Platform
 * Windows
 * Python 2.7 to Python 3.5
 
+Quick Start
+===========
+client.py
+
+.. code-block:: python
+   :name: client.py
+
+    from distcache.cache_client import CacheClient
+
+    client = CacheClient()
+
+    # Cache operations
+    client.set("brazil", "football")
+    client.set("harry", "potter")
+    client.set(1, 2)
+    client.set(3, 6)
+    client.set("hey", "hola")
+    client.get("hey")
+    client.get(1)
+    client.set("hey", "there")
+    client.get("hey")
+    client.delete(3)
+    client.get(3)
+    client.get("brazil")
+
+
+server.py
+
+.. code-block:: python
+   :name: server.py
+
+    from distcache.cache_server import CacheServer
+
+    server = CacheServer('localhost', 2050)
+
+Note: Make sure to include the address of the server in the self.server_pool list in config.py file.
+
+Run server.py and client.py.
+
+
 APIs
 ====
 :doc:`All distcache APIs <apis>`

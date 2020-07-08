@@ -2,7 +2,7 @@ import socket
 import threading
 import time
 
-from distcache import configure as config
+from distcache import config
 from distcache import utils
 
 config = config.config()
