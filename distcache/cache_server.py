@@ -105,7 +105,7 @@ class CacheServer:
         Listen to queries from specific client.
         :param client_socket:
         :param client_address:
-        :return:
+        :return:None
         """
         while True:
             response = client_socket.recv(self.HEADER_LENGTH)

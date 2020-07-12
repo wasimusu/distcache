@@ -99,7 +99,8 @@ class ConsistentHashing:
 
         :param node: node to be removed from the consistent hashing scheme.
         It will no longer be considered while hashing.
-        :returns: None
+
+        :return: None
         """
         temp = []
         for position, server in self.ring:

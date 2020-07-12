@@ -9,6 +9,7 @@ Allows for easier reasoning of code.
 # Tested against leetcode's test cases: https://leetcode.com/submissions/detail/359080389/.
 In project, test cases would be way better though.
 """
+from multiprocessing import Lock
 
 
 class LRUCache:
@@ -29,6 +30,7 @@ class LRUCache:
         self.time = 0
         self.least_recent_time = 0
         self.key_not_found = "!@#@!#$!#@$!@"
+        self.lock = Lock()
 
     def get(self, key):
         """
@@ -55,12 +57,10 @@ class LRUCache:
 
         :return: boolean indicating if the operation was successful or not.
         """
-        value, _ = self.cache.get(key, (self.key_not_found, -1))
-
-        # TODO: Add diff to value in a thread-safe manner
-        value += diff
-
-        self.set(key, value)  # TODO: Asynchronously update the timestamp also
+        with self.lock:
+            value, _ = self.cache.get(key, (self.key_not_found, -1))
+            value += diff
+            self.set(key, value)  # TODO: Asynchronously update the timestamp also
         return value
 
     def set(self, key, value):

@@ -17,10 +17,13 @@ When they come back online again, they will be treated as new servers.
 - (De)Serialization of key cache operations so that it can be reconstructed in the event of crash
 - Decouple cache design from cache client. Allows you to swap the cache design on the fly.
 And opens up cache design for testing.
-
-##### TODO for Release/General
 - Restructure the project so that files can be imported properly.
 - Add setup.py and other information for pypi.
+- Write documentation
+- Write in batches to the disk. Make provision for flush as well. 
+- Implement increment and decrement in redis like counter
+
+##### TODO for Release/General
 - Make some calls aysnc after testing code on single thread
 - Test everything!
     - Test all the different types of objects supported
@@ -35,7 +38,6 @@ And opens up cache design for testing.
     - Create 100,000 files of random images maybe (binary). Read and query these files.
     - Note: For benchmarks, we consider reading from database/file directly versus having querying in-memory key, value store.     
 - Add lots of sample code
-- Write documentation
 - Write wiki
 
 ##### TODO for communication
@@ -47,11 +49,9 @@ the communication between client and server works flawlessly. Cache is fine. :)
 
 ##### TODO for persistent storage
 - Add support for binary objects, images, pdf documents, and so.
-- Write in batches to the disk. Make provision for flush as well. 
 - When key is not in the cache, check for it in the disk
 
 ##### TODO for Cache Design
-- Implement increment and decrement in redis like counter
 - Expiration time on keys. It just makes each record expensive to store.
 - Implement different types of cache eviction strategies like LFU, etc.
 - Determine the size of the cache being used.

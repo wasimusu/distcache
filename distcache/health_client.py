@@ -27,6 +27,7 @@ class HealthClient:
         """
         If it receives any health probe from the server it replies with an ACK_MESSAGE to acknowledge that it is alive
         and well.
+
         :return: None
         """
         print("Responding to health query from the server...")
