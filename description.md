@@ -41,15 +41,14 @@ And opens up cache design for testing.
 - Write wiki
 
 ##### TODO for communication
-- Spawning cache clients should easier and less error prone.
 - CacheServer starts HealthServers. CacheClients start HealthClients. 
 - Make sure it works for single server node i.e. 
 the communication between client and server works flawlessly. Cache is fine. :)
 - Allow users to change the communication protocol: TCP/UDP/Unix Sockets.
 
 ##### TODO for persistent storage
-- Add support for binary objects, images, pdf documents, and so.
-- When key is not in the cache, check for it in the disk
+- Write binary objects (image, pdfs, etc) to the disk
+- When key is not in the cache, check for it in the disk/database
 
 ##### TODO for Cache Design
 - Expiration time on keys. It just makes each record expensive to store.

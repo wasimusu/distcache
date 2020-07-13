@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='distcache',
-    version='0.1.9',
+    version='0.1.2',
     author='Wasim Akram Khan',
     keywords='open-source, cache, distributed-cache, in-memory, database',
     description='Distcache is a python open-source distributed in-memory cache and database.',
