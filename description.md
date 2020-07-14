@@ -22,6 +22,8 @@ And opens up cache design for testing.
 - Write documentation
 - Write in batches to the disk. Make provision for flush as well. 
 - Implement increment and decrement in redis like counter
+- Write binary objects (image, pdfs, etc) to the disk
+- Multiple methods of cache reconstruction and persistence.
 
 ##### TODO for Release/General
 - Make some calls aysnc after testing code on single thread
@@ -47,7 +49,6 @@ the communication between client and server works flawlessly. Cache is fine. :)
 - Allow users to change the communication protocol: TCP/UDP/Unix Sockets.
 
 ##### TODO for persistent storage
-- Write binary objects (image, pdfs, etc) to the disk
 - When key is not in the cache, check for it in the disk/database
 
 ##### TODO for Cache Design

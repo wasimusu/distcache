@@ -22,7 +22,8 @@ See [wiki](https://github.com/wasimusu/distcache/wiki) or [readthedocs](https://
 4. Since, distcache has pure python implementation the installation process should painless. It's makes it easier to get started up and running.
 5. Its' architecture assumes that the cache clients and servers can fail and plans for it. The impact is minimal on adding and removing cache servers.
 6. Snapshot the servers at regular intervals to avoid cold starts upon crash or planned shutdowns
-7. Thread safe increment and decrement operations on keys.
+7. Log replays also available for slow but complete reconstruction of the cache upon server crash, error or shutdown.
+8. Thread safe increment and decrement operations on keys.
 
 ### Coming Up
 1. Health monitoring of clients and servers.

@@ -18,6 +18,13 @@ class CacheServer:
     """
     Implements cache client. It has different types of cache eviction policies at disposal.
     It responds to queries of cache server.
+
+    By default all of the operations that the cache server carries out are logged and can be used to reconstruct
+    the cache in the event of error or server shutdown.
+
+    The snapshots are however the very cache that will be the result of replaying logs but may miss some of the
+    latest server operations. It will be faster to rebuild from snapshot but saving snapshots are time consuming
+    operations.
     """
 
     def __init__(self, host='localhost', port=2050, capacity=100, expire=0, filename=0):
@@ -45,7 +52,7 @@ class CacheServer:
         self.LISTEN_CAPACITY = config.LISTEN_CAPACITY
 
         # Logging
-        self.dbname = 'cache.json' if filename is None else filename
+        self.dbname = 'cache.db' if filename is None else filename
         self.logger = logger.Logger(filename=self.dbname, mode='a', batch_size=1)
 
         self.save_every_k_seconds = config.save_every_k_seconds
@@ -66,12 +73,21 @@ class CacheServer:
 
     def reconstruct(self):
         """
-        Load the cache from the database
+        Load the cache from the latest database snapshot
         :return: None
         """
         if os.path.exists(self.dbname):
             with open(self.dbname, mode='rb') as db:
                 self.cache = pickle.load(db)
+
+    def replay_log(self):
+        """
+        Rebuild the cache by treating each of the logged objects as a client operation.
+        :return: None
+        """
+        logs = self.logger.read_logs()
+        for log in logs:
+            self.parse_message(log)
 
     def parse_message(self, message):
         """
@@ -81,7 +97,7 @@ class CacheServer:
         """
         # This should run in a separate thread
         message = pickle.loads(message)
-        self.logger.log(message)
+        self.logger.log_bytes(message)
 
         if message[0] == "set":
             return self.cache.set(message[1], message[2])
