@@ -15,7 +15,7 @@ See [wiki](https://github.com/wasimusu/distcache/wiki) or [readthedocs](https://
 ### Features
 1. Data types supported:
     - All basic data types and their combination. For instance, int, str, dict, set, tuple, list, etc and
-    their objects that have only these types as their attributes are supported.
+    objects that have only these types as their attributes are supported.
     - You can even read any object (image, pdfs, etc) in binary format and save them as key, value pair.
 2. Key cache operations are logged so when the server fails, the cache can be reconstructed from the log files.
 3. The APIs are similar to Memcached and Redis to reduce cognitive when migrating between platforms.
@@ -24,9 +24,7 @@ See [wiki](https://github.com/wasimusu/distcache/wiki) or [readthedocs](https://
 6. Snapshot the servers at regular intervals to avoid cold starts upon crash or planned shutdowns
 7. Log replays also available for slow but complete reconstruction of the cache upon server crash, error or shutdown.
 8. Thread safe increment and decrement operations on keys.
-
-### Coming Up
-1. Health monitoring of clients and servers.
+9. Health of the cache servers is monitored by the client.
 
 ### Install
 ```
