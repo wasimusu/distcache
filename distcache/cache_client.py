@@ -1,5 +1,7 @@
 """
 Implements distcache client. It interacts with the users.
+
+Note: This package lets all the individual client discover the health of the servers themselves.
 """
 
 import socket
@@ -8,9 +10,6 @@ from distcache import config as conf
 from distcache.consistent_hashing import ConsistentHashing
 from distcache import utils
 
-
-# Each client has list of all servers.
-# Do servers register with the client?
 
 class CacheClient:
     """
@@ -30,6 +29,9 @@ class CacheClient:
         # Start the connection with the server. socket. connect
         self.servers = self.config.get_server_pool()
         self.ring = ConsistentHashing(self.config.server_pool)
+
+        self.missed_response = {}  # Keeps track of consecutive missed response for each server
+        self.threshold_missed_response = 3  # If k consecutive response is negative for a server, declare it dead
 
     def _get_server_for_key(self, key):
         """
@@ -55,6 +57,16 @@ class CacheClient:
         self.client_socket.connect(server_address)
         response = utils.send_receive_ack(message, self.client_socket, self.HEADER_LENGTH, self.FORMAT)
         self.client_socket.close()
+
+        # Health check
+        if not response:
+            self.missed_response[server_address] = self.missed_response.get(server_address, 0)
+            if self.missed_response[server_address] == self.threshold_missed_response:
+                # This server is now pronounced dead
+                self.ring.remove_node(server_address)
+        else:
+            self.missed_response[server_address] = 0
+
         return response
 
     def set(self, key, value):
